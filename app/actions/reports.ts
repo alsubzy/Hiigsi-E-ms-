@@ -50,8 +50,19 @@ export async function getAttendanceReport(startDate?: string, endDate?: string) 
   const { data, error } = await query.order("date", { ascending: false })
 
   if (error) {
-    console.error("Error fetching attendance report:", error)
-    return { success: false, error: error.message, data: [] }
+    console.warn("Warning: Failed to fetch attendance report. If this is a new installation, please ensure you have run the database migration scripts (specifically 001_initial_schema.sql). Error details:", error.message)
+    return {
+      success: false,
+      error: error.message,
+      data: [],
+      stats: {
+        totalRecords: 0,
+        presentCount: 0,
+        absentCount: 0,
+        lateCount: 0,
+        attendanceRate: "0",
+      },
+    }
   }
 
   // Calculate statistics
@@ -92,8 +103,17 @@ export async function getGradingReport(grade?: string, term?: string) {
   const { data, error } = await query
 
   if (error) {
-    console.error("Error fetching grading report:", error)
-    return { success: false, error: error.message, data: [] }
+    console.warn("Warning: Failed to fetch grading report. Check if 'grades' table exists. Run migration scripts if missing.", error.message)
+    return {
+      success: false,
+      error: error.message,
+      data: [],
+      stats: {
+        totalGrades: 0,
+        averageMarks: "0",
+        gradeDistribution: {},
+      },
+    }
   }
 
   // Calculate statistics
@@ -140,8 +160,19 @@ export async function getFinancialReport(startDate?: string, endDate?: string) {
   const { data, error } = await query.order("payment_date", { ascending: false })
 
   if (error) {
-    console.error("Error fetching financial report:", error)
-    return { success: false, error: error.message, data: [] }
+    console.warn("Warning: Failed to fetch financial report.", error.message)
+    return {
+      success: false,
+      error: error.message,
+      data: [],
+      stats: {
+        totalPayments: 0,
+        totalRevenue: 0,
+        completedPayments: 0,
+        revenueByMethod: {},
+        revenueByFeeType: {},
+      },
+    }
   }
 
   // Calculate statistics
@@ -190,8 +221,18 @@ export async function getTeacherReport() {
     .eq("role", "teacher")
 
   if (error) {
-    console.error("Error fetching teacher report:", error)
-    return { success: false, error: error.message, data: [] }
+    console.warn("Warning: Failed to fetch teacher report.", error.message)
+    return {
+      success: false,
+      error: error.message,
+      data: [],
+      stats: {
+        totalTeachers: 0,
+        activeTeachers: 0,
+        presentToday: 0,
+        attendanceRate: "0",
+      },
+    }
   }
 
   // Get today's attendance

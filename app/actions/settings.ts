@@ -67,7 +67,7 @@ export async function getSchoolSettings() {
   const { data, error } = await supabase.from("academic_years").select("*").eq("is_active", true).single()
 
   if (error) {
-    console.error("Error fetching school settings:", error)
+    console.warn("Warning: Failed to fetch school settings. Check if 'academic_years' table exists (run scripts/004_academic_management.sql).", error.message)
     return { success: false, error: error.message, data: null }
   }
 
