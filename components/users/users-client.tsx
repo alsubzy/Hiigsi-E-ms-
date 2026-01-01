@@ -1,5 +1,7 @@
 "use client"
 
+import { useRouter } from "next/navigation"
+
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -29,11 +31,20 @@ type User = {
   status: string
   last_login: string | null
   created_at: string
+  phone?: string // Added missing optional field
   staff?: {
     employee_id: string
     department: string
     designation: string
     employment_status: string
+    // Add optional fields that StaffDialog might expect
+    qualification?: string
+    experience_years?: number
+    date_of_joining: string // Changed to mandatory
+    salary?: number
+    address?: string
+    emergency_contact_name?: string
+    emergency_contact_phone?: string
   }
 }
 
@@ -42,11 +53,17 @@ export default function UsersClient({
   auditLogs,
   roles,
   permissions,
+  totalCount,
+  currentPage,
+  pageSize,
 }: {
   users: User[]
   auditLogs: any[]
   roles: any[]
   permissions: any[]
+  totalCount: number
+  currentPage: number
+  pageSize: number
 }) {
   const [users, setUsers] = useState(initialUsers)
   const [searchQuery, setSearchQuery] = useState("")
@@ -54,6 +71,13 @@ export default function UsersClient({
   const [isUserDialogOpen, setIsUserDialogOpen] = useState(false)
   const [isStaffDialogOpen, setIsStaffDialogOpen] = useState(false)
   const [activeTab, setActiveTab] = useState("users")
+  const router = useRouter()
+
+  const handlePageChange = (newPage: number) => {
+    router.push(`/dashboard/users?page=${newPage}`)
+  }
+
+  const totalPages = Math.ceil(totalCount / pageSize)
 
   const filteredUsers = users.filter(
     (user) =>
@@ -68,7 +92,7 @@ export default function UsersClient({
     const result = await deleteUser(userId)
     if (result.success) {
       toast.success(result.message)
-      window.location.reload()
+      router.refresh()
     } else {
       toast.error(result.error || "Failed to delete user")
     }
@@ -78,7 +102,7 @@ export default function UsersClient({
     const result = await toggleUserStatus(userId)
     if (result.success) {
       toast.success(result.message)
-      window.location.reload()
+      router.refresh()
     } else {
       toast.error(result.error || "Failed to update user status")
     }

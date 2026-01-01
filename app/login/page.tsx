@@ -11,11 +11,11 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { GraduationCap } from "lucide-react"
+import { toast } from "sonner"
 
 export default function LoginPage() {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [error, setError] = useState<string | null>(null)
   const [isLoading, setIsLoading] = useState(false)
   const router = useRouter()
 
@@ -23,18 +23,31 @@ export default function LoginPage() {
     e.preventDefault()
     const supabase = createClient()
     setIsLoading(true)
-    setError(null)
 
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       })
       if (error) throw error
+
+      // Check user status
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("status")
+        .eq("id", data.user.id)
+        .single()
+
+      if (profile && profile.status !== "active") {
+        await supabase.auth.signOut()
+        throw new Error("Your account is " + profile.status + ". Please contact support.")
+      }
+
+      toast.success("Login successful! Welcome to the dashboard.")
       router.push("/dashboard")
       router.refresh()
-    } catch (error: unknown) {
-      setError(error instanceof Error ? error.message : "An error occurred")
+    } catch (error: any) {
+      toast.error(error.message || "An error occurred during login")
     } finally {
       setIsLoading(false)
     }
@@ -77,7 +90,6 @@ export default function LoginPage() {
                       onChange={(e) => setPassword(e.target.value)}
                     />
                   </div>
-                  {error && <p className="text-sm text-red-500">{error}</p>}
                   <Button type="submit" className="w-full" disabled={isLoading}>
                     {isLoading ? "Logging in..." : "Login"}
                   </Button>

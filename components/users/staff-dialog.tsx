@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -44,6 +45,7 @@ export function StaffDialog({
   onOpenChange: (open: boolean) => void
   user: User | null
 }) {
+  const router = useRouter()
   const [formData, setFormData] = useState({
     employeeId: "",
     department: "",
@@ -114,7 +116,7 @@ export function StaffDialog({
       if (result.success) {
         toast.success(result.message)
         onOpenChange(false)
-        window.location.reload()
+        router.refresh()
       } else {
         toast.error(result.error || "Failed to save staff profile")
       }

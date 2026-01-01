@@ -43,5 +43,17 @@ export async function updateSession(request: NextRequest) {
     return NextResponse.redirect(url)
   }
 
+  // RBAC: Block non-admins from restricted routes
+  if (user && (request.nextUrl.pathname.startsWith("/dashboard/users") || request.nextUrl.pathname.startsWith("/dashboard/settings"))) {
+    // Fetch user profile to check role (more secure than metadata)
+    const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
+
+    if (profile?.role !== "admin") {
+      const url = request.nextUrl.clone()
+      url.pathname = "/dashboard"
+      return NextResponse.redirect(url)
+    }
+  }
+
   return supabaseResponse
 }

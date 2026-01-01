@@ -17,10 +17,14 @@ import {
   BarChart3,
   Settings,
   Shield,
+  Calendar as CalendarIcon,
+  Clock,
+  FileText,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
 import { createClient } from "@/lib/supabase/client"
+import { toast } from "sonner"
 import type { Profile } from "@/lib/types"
 
 interface SidebarProps {
@@ -48,10 +52,34 @@ const navItems: NavItem[] = [
     roles: ["admin"],
   },
   {
-    title: "Academic",
-    href: "/dashboard/academic",
+    title: "Calendar",
+    href: "/dashboard/academic/calendar",
+    icon: CalendarIcon, // Need to import or use similar
+    roles: ["admin"],
+  },
+  {
+    title: "Classes",
+    href: "/dashboard/academic/classes",
+    icon: School,
+    roles: ["admin"],
+  },
+  {
+    title: "Subjects",
+    href: "/dashboard/academic/subjects",
     icon: BookOpen,
     roles: ["admin"],
+  },
+  {
+    title: "Timetable",
+    href: "/dashboard/academic/timetable",
+    icon: Clock, // Need to import
+    roles: ["admin", "teacher"],
+  },
+  {
+    title: "Syllabus",
+    href: "/dashboard/academic/syllabus",
+    icon: FileText, // Need to import
+    roles: ["admin", "teacher"],
   },
   {
     title: "Teachers",
@@ -106,6 +134,7 @@ export function Sidebar({ user }: SidebarProps) {
   const handleLogout = async () => {
     const supabase = createClient()
     await supabase.auth.signOut()
+    toast.success("Successfully logged out.")
     router.push("/login")
     router.refresh()
   }

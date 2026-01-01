@@ -3,6 +3,7 @@
 import type React from "react"
 
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -36,6 +37,7 @@ export function UserDialog({
   onOpenChange: (open: boolean) => void
   user: User | null
 }) {
+  const router = useRouter()
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -85,7 +87,7 @@ export function UserDialog({
         if (result.success) {
           toast.success(result.message)
           onOpenChange(false)
-          window.location.reload()
+          router.refresh()
         } else {
           toast.error(result.error || "Failed to update user")
         }
@@ -108,7 +110,7 @@ export function UserDialog({
         if (result.success) {
           toast.success(result.message)
           onOpenChange(false)
-          window.location.reload()
+          router.refresh()
         } else {
           toast.error(result.error || "Failed to create user")
         }

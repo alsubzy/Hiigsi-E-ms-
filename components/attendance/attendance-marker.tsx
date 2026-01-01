@@ -8,6 +8,7 @@ import { cn } from "@/lib/utils"
 import type { Student } from "@/lib/types"
 import { markAttendance } from "@/app/actions/attendance"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 interface AttendanceMarkerProps {
   students: Student[]
@@ -46,10 +47,10 @@ export function AttendanceMarker({ students, existingAttendance, date }: Attenda
       await Promise.all(
         students.map((student) => markAttendance(student.id, date, attendanceData[student.id] || "present")),
       )
-      alert("Attendance saved successfully!")
+      toast.success("Attendance saved successfully!")
       router.refresh()
-    } catch (error) {
-      alert("Failed to save attendance: " + (error instanceof Error ? error.message : "Unknown error"))
+    } catch (error: any) {
+      toast.error("Failed to save attendance: " + (error.message || "Unknown error"))
     } finally {
       setIsSaving(false)
     }

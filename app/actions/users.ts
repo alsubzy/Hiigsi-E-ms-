@@ -18,32 +18,57 @@ export type UserWithStaff = {
     department: string
     designation: string
     employment_status: string
+    qualification?: string
+    experience_years?: number
+    date_of_joining: string
+    salary?: number
+    address?: string
+    emergency_contact_name?: string
+    emergency_contact_phone?: string
   }
 }
 
-export async function getAllUsers() {
+export async function getAllUsers(page = 1, limit = 10) {
   const supabase = await createClient()
 
-  const { data: users, error } = await supabase
+  // Calculate range
+  const from = (page - 1) * limit
+  const to = from + limit - 1
+
+  const { data: users, count, error } = await supabase
     .from("profiles")
     .select(`
       *,
-      staff (
-        employee_id,
-        department,
-        designation,
-        employment_status
-      )
-    `)
+      staff (*)
+    `, { count: "exact" })
     .is("deleted_at", null)
     .order("created_at", { ascending: false })
+    .range(from, to)
 
   if (error) {
     console.error("Error fetching users:", error)
-    return { success: false, error: error.message, users: [] }
+    return { success: false, error: error.message, users: [], totalCount: 0 }
   }
 
-  return { success: true, users: users as UserWithStaff[] }
+  return { success: true, users: users as UserWithStaff[], totalCount: count || 0 }
+}
+
+export async function getTeachers() {
+  const supabase = await createClient()
+
+  const { data: teachers, error } = await supabase
+    .from("profiles")
+    .select("id, full_name, email")
+    .eq("role", "teacher")
+    .eq("status", "active")
+    .order("full_name")
+
+  if (error) {
+    console.error("Error fetching teachers:", error)
+    return { success: false, teachers: [] }
+  }
+
+  return { success: true, teachers }
 }
 
 export async function getUserById(userId: string) {
@@ -75,7 +100,14 @@ export async function createUser(data: {
   phone?: string
 }) {
   const supabase = await createClient()
-  const adminClient = createAdminClient()
+
+  let adminClient
+  try {
+    adminClient = createAdminClient()
+  } catch (error) {
+    console.error("Failed to create admin client:", error)
+    return { success: false, error: "Server configuration error. Please check system logs." }
+  }
 
   const { data: authData, error: authError } = await adminClient.auth.admin.createUser({
     email: data.email,
@@ -92,7 +124,8 @@ export async function createUser(data: {
     return { success: false, error: authError.message }
   }
 
-  const { error: profileError } = await supabase
+  // Use adminClient to bypass RLS for profile update
+  const { error: profileError } = await adminClient
     .from("profiles")
     .update({
       full_name: data.full_name,
@@ -104,7 +137,10 @@ export async function createUser(data: {
 
   if (profileError) {
     console.error("Error updating profile:", profileError)
-    return { success: false, error: profileError.message }
+    // Warning: If this fails, the auth user is still created but profile might be incomplete or trigger-dependent info missing.
+    // Ideally we should rollback, but Supabase doesn't support easy transactions across Auth and DB this way.
+    // For now, returning error is enough.
+    return { success: false, error: "User created but profile update failed: " + profileError.message }
   }
 
   await logAuditAction({
@@ -153,6 +189,14 @@ export async function updateUser(
 export async function deleteUser(userId: string) {
   const supabase = await createClient()
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  if (user?.id === userId) {
+    return { success: false, error: "You cannot delete your own account." }
+  }
+
   const { error } = await supabase.from("profiles").update({ deleted_at: new Date().toISOString() }).eq("id", userId)
 
   if (error) {
@@ -192,7 +236,14 @@ export async function restoreUser(userId: string) {
 
 export async function resetUserPassword(userId: string, newPassword: string) {
   const supabase = await createClient()
-  const adminClient = createAdminClient()
+
+  let adminClient
+  try {
+    adminClient = createAdminClient()
+  } catch (error) {
+    console.error("Failed to create admin client:", error)
+    return { success: false, error: "Server configuration error. Please check system logs." }
+  }
 
   const { error } = await adminClient.auth.admin.updateUserById(userId, {
     password: newPassword,
