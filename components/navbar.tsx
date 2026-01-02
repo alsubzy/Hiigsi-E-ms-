@@ -27,7 +27,7 @@ export function Navbar() {
 
     const languages: { code: Language; label: string; flag: string }[] = [
         { code: "en", label: t("english"), flag: "🇺🇸" },
-        { code: "so", label: t("somali"), flag: "🇸🇴" },
+        { code: "so", label: t("somali"), flag: "🇸🇴maliland" },
         { code: "ar", label: t("arabic"), flag: "🇸🇦" },
     ]
 
@@ -38,12 +38,12 @@ export function Navbar() {
                     {/* Logo Section */}
                     <div className="flex items-center gap-2">
                         <Link href="/" className="flex items-center gap-2 group">
-                            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
-                                <School className="h-5 w-5 text-white" />
+                            <div className="flex h-10 w-10 items-center justify-center rounded-xl overflow-hidden bg-white group-hover:scale-105 transition-transform">
+                                <img src="/hiigsi-logo.jpg" alt="Hiigsi Skills" className="h-full w-full object-contain" />
                             </div>
                             <div className="flex flex-col">
-                                <span className="text-lg font-black tracking-tight text-foreground">{t("schoolName")}</span>
-                                <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tighter leading-none">{t("terminal")}</span>
+                                <span className="text-lg font-black tracking-tight text-foreground">Hiigsi Skills</span>
+                                <span className="text-[10px] text-muted-foreground font-bold uppercase tracking-tighter leading-none">Management System</span>
                             </div>
                         </Link>
                     </div>

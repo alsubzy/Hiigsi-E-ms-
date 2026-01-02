@@ -218,11 +218,11 @@ export function Sidebar({ user, onClose }: SidebarProps) {
   return (
     <div className="flex h-full w-64 flex-col border-r bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="flex h-16 items-center gap-3 border-b px-6">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary shadow-lg shadow-primary/20">
-          <School className="h-5 w-5 text-white" />
+        <div className="flex h-10 w-10 items-center justify-center rounded-lg overflow-hidden bg-white">
+          <img src="/hiigsi-logo.jpg" alt="Hiigsi Skills" className="h-full w-full object-contain" />
         </div>
         <div className="flex flex-col">
-          <span className="text-sm font-bold tracking-tight">HIIGSI S.M.S</span>
+          <span className="text-sm font-bold tracking-tight">Hiigsi Skills</span>
           <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter">Management System</span>
         </div>
       </div>

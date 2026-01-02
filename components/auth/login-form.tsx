@@ -36,7 +36,7 @@ export function LoginForm() {
   return (
     <Card className="w-full max-w-md">
       <CardHeader className="space-y-2">
-        <CardTitle className="text-2xl">Welcome Back</CardTitle>
+        <CardTitle className="text-2xl">Welcome Back ! </CardTitle>
         <CardDescription>Sign in to your school management account</CardDescription>
       </CardHeader>
       <CardContent>

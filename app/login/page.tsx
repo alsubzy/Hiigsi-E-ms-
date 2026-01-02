@@ -107,10 +107,10 @@ export default function LoginPage() {
           dir === "rtl" && "md:order-last"
         )}>
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-full border-4 border-primary flex items-center justify-center relative">
-              <div className="w-2 h-2 rounded-full bg-primary" />
+            <div className="w-10 h-10 rounded-lg overflow-hidden bg-white flex items-center justify-center">
+              <img src="/hiigsi-logo.jpg" alt="Hiigsi Skills" className="h-full w-full object-contain" />
             </div>
-            <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white uppercase italic">{t("schoolName")}</span>
+            <span className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">Hiigsi Skills</span>
           </div>
 
           <div className="relative flex-1 flex flex-col items-center justify-center">
@@ -161,7 +161,7 @@ export default function LoginPage() {
             </div>
 
             <div className="mt-8 text-left w-full" style={{ textAlign: dir === "rtl" ? "right" : "left" }}>
-              <h2 className="text-3xl font-black text-slate-900 dark:text-white">{t("schoolName")}</h2>
+              <h2 className="text-3xl font-black text-slate-900 dark:text-white">Hiigsi Skills</h2>
               <div className="mt-4 space-y-1">
                 <p className="text-slate-400 font-medium text-sm">{t("schoolSubtitle")}</p>
                 <p className="text-slate-400 font-medium text-sm">{t("empowerEducation")}</p>
