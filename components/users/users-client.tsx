@@ -20,8 +20,10 @@ import {
 import { Plus, Search, MoreVertical, Shield, Users, CheckCircle, XCircle } from "lucide-react"
 import { UserDialog } from "./user-dialog"
 import { StaffDialog } from "./staff-dialog"
+import { PasswordResetDialog } from "./password-reset-dialog"
 import { deleteUser, toggleUserStatus, resetUserPassword } from "@/app/actions/users"
 import { toast } from "sonner"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
 type User = {
   id: string
@@ -65,11 +67,13 @@ export default function UsersClient({
   currentPage: number
   pageSize: number
 }) {
-  const [users, setUsers] = useState(initialUsers)
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
   const [isUserDialogOpen, setIsUserDialogOpen] = useState(false)
   const [isStaffDialogOpen, setIsStaffDialogOpen] = useState(false)
+  const [isPasswordResetOpen, setIsPasswordResetOpen] = useState(false)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [userToModify, setUserToModify] = useState<string | null>(null)
   const [activeTab, setActiveTab] = useState("users")
   const router = useRouter()
 
@@ -79,23 +83,28 @@ export default function UsersClient({
 
   const totalPages = Math.ceil(totalCount / pageSize)
 
-  const filteredUsers = users.filter(
-    (user) =>
+  const filteredUsers = initialUsers.filter(
+    (user: User) =>
       user.full_name?.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.role.toLowerCase().includes(searchQuery.toLowerCase()),
   )
 
-  const handleDeleteUser = async (userId: string) => {
-    if (!confirm("Are you sure you want to delete this user?")) return
+  const handleDeleteUser = (userId: string) => {
+    setUserToModify(userId)
+    setIsDeleteDialogOpen(true)
+  }
 
-    const result = await deleteUser(userId)
+  const confirmDeleteUser = async () => {
+    if (!userToModify) return
+    const result = await deleteUser(userToModify)
     if (result.success) {
       toast.success(result.message)
       router.refresh()
     } else {
       toast.error(result.error || "Failed to delete user")
     }
+    setUserToModify(null)
   }
 
   const handleToggleStatus = async (userId: string) => {
@@ -108,19 +117,20 @@ export default function UsersClient({
     }
   }
 
-  const handleResetPassword = async (userId: string) => {
-    const newPassword = prompt("Enter new password (min 6 characters):")
-    if (!newPassword || newPassword.length < 6) {
-      toast.error("Password must be at least 6 characters")
-      return
-    }
+  const handleResetPassword = (userId: string) => {
+    setUserToModify(userId)
+    setIsPasswordResetOpen(true)
+  }
 
-    const result = await resetUserPassword(userId, newPassword)
+  const confirmResetPassword = async (newPassword: string) => {
+    if (!userToModify) return
+    const result = await resetUserPassword(userToModify, newPassword)
     if (result.success) {
       toast.success(result.message)
     } else {
       toast.error(result.error || "Failed to reset password")
     }
+    setUserToModify(null)
   }
 
   const handleAddStaff = (user: User) => {
@@ -129,10 +139,10 @@ export default function UsersClient({
   }
 
   const stats = {
-    total: users.length,
-    active: users.filter((u) => u.status === "active").length,
-    inactive: users.filter((u) => u.status === "inactive").length,
-    withStaff: users.filter((u) => u.staff).length,
+    total: totalCount,
+    active: initialUsers.filter((u: User) => u.status === "active").length,
+    inactive: initialUsers.filter((u: User) => u.status === "inactive").length,
+    withStaff: initialUsers.filter((u: User) => u.staff).length,
   }
 
   return (
@@ -389,6 +399,22 @@ export default function UsersClient({
       <UserDialog open={isUserDialogOpen} onOpenChange={setIsUserDialogOpen} user={selectedUser} />
 
       <StaffDialog open={isStaffDialogOpen} onOpenChange={setIsStaffDialogOpen} user={selectedUser} />
+
+      <ConfirmDialog
+        open={isDeleteDialogOpen}
+        onOpenChange={setIsDeleteDialogOpen}
+        onConfirm={confirmDeleteUser}
+        title="Delete User"
+        description="Are you sure you want to delete this user? This action cannot be undone."
+        confirmText="Delete"
+        variant="destructive"
+      />
+
+      <PasswordResetDialog
+        open={isPasswordResetOpen}
+        onOpenChange={setIsPasswordResetOpen}
+        onConfirm={confirmResetPassword}
+      />
     </div>
   )
 }

@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
 import { createSubject, updateSubject, deleteSubject, allocateTeacher, removeAllocation, Subject, SubjectTeacher } from "@/app/actions/subjects"
 import { ClassRange } from "@/app/actions/classes"
@@ -34,6 +35,8 @@ export function SubjectsClient({ initialSubjects, classes, teachers, academicYea
     const [isSubjectDialogOpen, setIsSubjectDialogOpen] = useState(false)
     const [isAllocationDialogOpen, setIsAllocationDialogOpen] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+    const [subjectToDelete, setSubjectToDelete] = useState<string | null>(null)
 
     // Subject Form
     const [editingSubject, setEditingSubject] = useState<Subject | null>(null)
@@ -115,11 +118,15 @@ export function SubjectsClient({ initialSubjects, classes, teachers, academicYea
         }
     }
 
-    const handleDeleteSubject = async (id: string) => {
-        if (!confirm("Delete this subject?")) return
+    const handleDeleteSubject = (id: string) => {
+        setSubjectToDelete(id)
+        setIsDeleteDialogOpen(true)
+    }
 
+    const confirmDeleteSubject = async () => {
+        if (!subjectToDelete) return
         try {
-            const result = await deleteSubject(id)
+            const result = await deleteSubject(subjectToDelete)
             if (result.success) {
                 toast.success(result.message)
                 router.refresh()
@@ -128,6 +135,8 @@ export function SubjectsClient({ initialSubjects, classes, teachers, academicYea
             }
         } catch (error: any) {
             toast.error("Failed to delete subject.")
+        } finally {
+            setSubjectToDelete(null)
         }
     }
 
@@ -334,6 +343,16 @@ export function SubjectsClient({ initialSubjects, classes, teachers, academicYea
                     </form>
                 </DialogContent>
             </Dialog>
+
+            <ConfirmDialog
+                open={isDeleteDialogOpen}
+                onOpenChange={setIsDeleteDialogOpen}
+                onConfirm={confirmDeleteSubject}
+                title="Delete Subject"
+                description="Are you sure you want to delete this subject? This action cannot be undone."
+                confirmText="Delete"
+                variant="destructive"
+            />
         </div>
     )
 }

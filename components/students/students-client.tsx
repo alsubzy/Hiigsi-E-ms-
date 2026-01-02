@@ -12,6 +12,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { Student } from "@/lib/types"
 import { deleteStudent } from "@/app/actions/students"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
 interface StudentsClientProps {
   students: Student[]
@@ -24,6 +26,8 @@ export function StudentsClient({ students, userRole }: StudentsClientProps) {
   const [gradeFilter, setGradeFilter] = useState("all")
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedStudent, setSelectedStudent] = useState<Student | undefined>()
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
+  const [studentToDelete, setStudentToDelete] = useState<string | null>(null)
   const router = useRouter()
 
   useEffect(() => {
@@ -57,14 +61,21 @@ export function StudentsClient({ students, userRole }: StudentsClientProps) {
     setDialogOpen(true)
   }
 
-  const handleDeleteStudent = async (id: string) => {
-    if (window.confirm("Are you sure you want to delete this student?")) {
-      try {
-        await deleteStudent(id)
-        router.refresh()
-      } catch (error) {
-        alert("Failed to delete student")
-      }
+  const handleDeleteClick = (id: string) => {
+    setStudentToDelete(id)
+    setDeleteConfirmOpen(true)
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!studentToDelete) return
+    try {
+      await deleteStudent(studentToDelete)
+      toast.success("Student deleted successfully")
+      router.refresh()
+    } catch (error) {
+      toast.error("Failed to delete student")
+    } finally {
+      setStudentToDelete(null)
     }
   }
 
@@ -154,7 +165,7 @@ export function StudentsClient({ students, userRole }: StudentsClientProps) {
                         <Button variant="ghost" size="icon" onClick={() => handleEditStudent(student)}>
                           <Edit className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDeleteStudent(student.id)}>
+                        <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(student.id)}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
@@ -168,6 +179,15 @@ export function StudentsClient({ students, userRole }: StudentsClientProps) {
       </Card>
 
       {canModify && <StudentDialog open={dialogOpen} onOpenChange={setDialogOpen} student={selectedStudent} />}
+      <ConfirmDialog
+        open={deleteConfirmOpen}
+        onOpenChange={setDeleteConfirmOpen}
+        onConfirm={handleConfirmDelete}
+        title="Delete Student"
+        description="Are you sure you want to delete this student? This action cannot be undone."
+        confirmText="Delete"
+        variant="destructive"
+      />
     </div>
   )
 }

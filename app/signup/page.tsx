@@ -12,6 +12,7 @@ import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { useState } from "react"
 import { GraduationCap } from "lucide-react"
+import { toast } from "sonner"
 
 export default function SignUpPage() {
   const [email, setEmail] = useState("")
@@ -43,7 +44,7 @@ export default function SignUpPage() {
       if (error) throw error
 
       // Show success message
-      alert("Account created! Please check your email to confirm your account before logging in.")
+      toast.success("Account created! Please check your email to confirm your account before logging in.")
       router.push("/login")
     } catch (error: unknown) {
       setError(error instanceof Error ? error.message : "An error occurred")

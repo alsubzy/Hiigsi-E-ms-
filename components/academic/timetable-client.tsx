@@ -13,6 +13,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
 import { createTimetableEntry, deleteTimetableEntry, getTimetable, TimetableEntry } from "@/app/actions/timetable"
 import { ClassRange } from "@/app/actions/classes"
@@ -40,6 +41,8 @@ export function TimetableClient({ initialClasses, academicYears }: TimetableClie
     const [loadingTimetable, setLoadingTimetable] = useState(false)
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+    const [idToDelete, setIdToDelete] = useState<string | null>(null)
 
     // Filters
     const [selectedClassId, setSelectedClassId] = useState("")
@@ -156,16 +159,21 @@ export function TimetableClient({ initialClasses, academicYears }: TimetableClie
         }
     }
 
-    async function handleDeleteEntry(id: string) {
-        if (!confirm("Remove this class from schedule?")) return
+    function handleDeleteEntry(id: string) {
+        setIdToDelete(id)
+        setIsDeleteDialogOpen(true)
+    }
 
-        const result = await deleteTimetableEntry(id)
+    async function confirmDeleteEntry() {
+        if (!idToDelete) return
+        const result = await deleteTimetableEntry(idToDelete)
         if (result.success) {
             toast.success(result.message)
             fetchTimetable()
         } else {
             toast.error(result.error)
         }
+        setIdToDelete(null)
     }
 
     return (
@@ -327,6 +335,16 @@ export function TimetableClient({ initialClasses, academicYears }: TimetableClie
                     </form>
                 </DialogContent>
             </Dialog>
+
+            <ConfirmDialog
+                open={isDeleteDialogOpen}
+                onOpenChange={setIsDeleteDialogOpen}
+                onConfirm={confirmDeleteEntry}
+                title="Remove Schedule Entry"
+                description="Are you sure you want to remove this class from the schedule? This action cannot be undone."
+                confirmText="Remove"
+                variant="destructive"
+            />
         </div>
     )
 }

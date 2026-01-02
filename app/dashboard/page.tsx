@@ -4,6 +4,9 @@ import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
 import { Header } from "@/components/dashboard/header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Users, ClipboardCheck, GraduationCap, DollarSign } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import Link from "next/link"
+
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -18,10 +21,32 @@ export default async function DashboardPage() {
   }
 
   // Fetch user profile
-  const { data: profile } = await supabase.from("profiles").select("*").eq("id", user.id).single()
+  const { data: profile, error: profileError } = await supabase.from("profiles").select("*").eq("id", user.id).single()
 
-  if (!profile) {
-    redirect("/login")
+  if (!profile || profileError) {
+    // If user is authenticated but has no profile, don't redirect back to login (causes infinite loop)
+    // Instead, show a meaningful message or redirect to an onboarding page
+    return (
+      <div className="flex flex-col items-center justify-center min-h-screen p-4 text-center">
+        <h1 className="text-2xl font-bold text-red-600">Profile Error</h1>
+        <div className="mt-4 p-4 bg-red-50 rounded-lg border border-red-200">
+          <p className="font-medium">User authenticated as: <span className="text-blue-600">{user.email}</span></p>
+          <p className="mt-2 text-sm text-gray-600">However, no record was found in the <code className="bg-gray-100 px-1">profiles</code> table for ID: <code className="bg-gray-100 px-1">{user.id}</code></p>
+          {profileError && (
+            <p className="mt-2 text-xs text-red-500">Database Error: {profileError.message}</p>
+          )}
+        </div>
+        <p className="mt-6 text-muted-foreground">This usually happens if the Supabase trigger failed or hasn&apos;t been created yet.</p>
+        <div className="mt-8 flex gap-4">
+          <form action="/auth/sign-out" method="post">
+            <Button variant="outline" type="submit">Sign Out</Button>
+          </form>
+          <Link href="/login">
+            <Button>Back to Login</Button>
+          </Link>
+        </div>
+      </div>
+    )
   }
 
   // Fetch real statistics

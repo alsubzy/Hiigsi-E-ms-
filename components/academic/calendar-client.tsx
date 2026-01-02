@@ -17,6 +17,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { cn } from "@/lib/utils"
 import { toast } from "sonner"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
 import { createAcademicYear, setActiveAcademicYear, createTerm, deleteTerm, AcademicYear, Term } from "@/app/actions/academic"
 
@@ -31,6 +32,8 @@ export function CalendarClient({ years, terms }: CalendarClientProps) {
     const [isYearDialogOpen, setIsYearDialogOpen] = useState(false)
     const [isTermDialogOpen, setIsTermDialogOpen] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+    const [idToDelete, setIdToDelete] = useState<string | null>(null)
 
     // Year Form State
     const [yearName, setYearName] = useState("")
@@ -125,16 +128,21 @@ export function CalendarClient({ years, terms }: CalendarClientProps) {
         }
     }
 
-    async function handleDeleteTerm(id: string) {
-        if (!confirm("Are you sure you want to delete this term?")) return
+    function handleDeleteTerm(id: string) {
+        setIdToDelete(id)
+        setIsDeleteDialogOpen(true)
+    }
 
-        const result = await deleteTerm(id)
+    async function confirmDeleteTerm() {
+        if (!idToDelete) return
+        const result = await deleteTerm(idToDelete)
         if (result.success) {
             toast.success(result.message)
             router.refresh()
         } else {
             toast.error(result.error)
         }
+        setIdToDelete(null)
     }
 
     return (
@@ -313,6 +321,16 @@ export function CalendarClient({ years, terms }: CalendarClientProps) {
                     </form>
                 </DialogContent>
             </Dialog>
+
+            <ConfirmDialog
+                open={isDeleteDialogOpen}
+                onOpenChange={setIsDeleteDialogOpen}
+                onConfirm={confirmDeleteTerm}
+                title="Delete Term"
+                description="Are you sure you want to delete this term? This action cannot be undone."
+                confirmText="Delete"
+                variant="destructive"
+            />
         </div>
     )
 }

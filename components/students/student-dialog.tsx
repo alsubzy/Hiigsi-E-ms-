@@ -11,6 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import type { Student } from "@/lib/types"
 import { createStudent, updateStudent } from "@/app/actions/students"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 interface StudentDialogProps {
   open: boolean
@@ -89,13 +90,15 @@ export function StudentDialog({ open, onOpenChange, student }: StudentDialogProp
     try {
       if (student) {
         await updateStudent(student.id, formData)
+        toast.success("Student updated successfully")
       } else {
         await createStudent(formData)
+        toast.success("Student created successfully")
       }
       onOpenChange(false)
       router.refresh()
     } catch (error) {
-      alert("Failed to save student: " + (error instanceof Error ? error.message : "Unknown error"))
+      toast.error("Failed to save student: " + (error instanceof Error ? error.message : "Unknown error"))
     } finally {
       setIsSubmitting(false)
     }

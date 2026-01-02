@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea"
 import type { Student } from "@/lib/types"
 import { saveGrade, getGradesByStudent } from "@/app/actions/grading"
 import { useRouter } from "next/navigation"
+import { toast } from "sonner"
 
 interface GradeEntryFormProps {
   students: Student[]
@@ -81,7 +82,7 @@ export function GradeEntryForm({ students, subjects, term }: GradeEntryFormProps
           ),
         ),
       )
-      alert("Grades saved successfully!")
+      toast.success("Grades saved successfully!")
       router.refresh()
 
       // Move to next student if available
@@ -90,7 +91,7 @@ export function GradeEntryForm({ students, subjects, term }: GradeEntryFormProps
         setSelectedStudent(students[currentIndex + 1])
       }
     } catch (error) {
-      alert("Failed to save grades: " + (error instanceof Error ? error.message : "Unknown error"))
+      toast.error("Failed to save grades: " + (error instanceof Error ? error.message : "Unknown error"))
     } finally {
       setIsSaving(false)
     }

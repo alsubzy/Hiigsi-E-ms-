@@ -13,6 +13,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible"
 import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
 import { createClass, updateClass, deleteClass, createSection, deleteSection, ClassRange } from "@/app/actions/classes"
 
@@ -28,6 +29,9 @@ export function ClassesClient({ initialClasses }: ClassesClientProps) {
     const [isClassDialogOpen, setIsClassDialogOpen] = useState(false)
     const [isSectionDialogOpen, setIsSectionDialogOpen] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+    const [deleteType, setDeleteType] = useState<"class" | "section" | null>(null)
+    const [idToDelete, setIdToDelete] = useState<string | null>(null)
 
     // Class Form
     const [editingClass, setEditingClass] = useState<ClassRange | null>(null)
@@ -88,11 +92,20 @@ export function ClassesClient({ initialClasses }: ClassesClientProps) {
         }
     }
 
-    const handleDeleteClass = async (id: string) => {
-        if (!confirm("Delete this grade level? All associated sections will also be deleted.")) return
+    const handleDeleteClass = (id: string) => {
+        setIdToDelete(id)
+        setDeleteType("class")
+        setIsDeleteDialogOpen(true)
+    }
+
+    const confirmDelete = async () => {
+        if (!idToDelete || !deleteType) return
 
         try {
-            const result = await deleteClass(id)
+            const result = deleteType === "class"
+                ? await deleteClass(idToDelete)
+                : await deleteSection(idToDelete)
+
             if (result.success) {
                 toast.success(result.message)
                 router.refresh()
@@ -101,6 +114,9 @@ export function ClassesClient({ initialClasses }: ClassesClientProps) {
             }
         } catch (error: any) {
             toast.error("An error occurred during deletion.")
+        } finally {
+            setIdToDelete(null)
+            setDeleteType(null)
         }
     }
 
@@ -137,20 +153,10 @@ export function ClassesClient({ initialClasses }: ClassesClientProps) {
         }
     }
 
-    const handleDeleteSection = async (id: string) => {
-        if (!confirm("Are you sure you want to delete this section?")) return
-
-        try {
-            const result = await deleteSection(id)
-            if (result.success) {
-                toast.success(result.message)
-                router.refresh()
-            } else {
-                toast.error(result.error)
-            }
-        } catch (error: any) {
-            toast.error("An error occurred during deletion.")
-        }
+    const handleDeleteSection = (id: string) => {
+        setIdToDelete(id)
+        setDeleteType("section")
+        setIsDeleteDialogOpen(true)
     }
 
     return (
@@ -281,6 +287,18 @@ export function ClassesClient({ initialClasses }: ClassesClientProps) {
                     </form>
                 </DialogContent>
             </Dialog>
+
+            <ConfirmDialog
+                open={isDeleteDialogOpen}
+                onOpenChange={setIsDeleteDialogOpen}
+                onConfirm={confirmDelete}
+                title={deleteType === "class" ? "Delete Grade Level" : "Delete Section"}
+                description={deleteType === "class"
+                    ? "Are you sure you want to delete this grade level? All associated sections will also be deleted. This action cannot be undone."
+                    : "Are you sure you want to delete this section? This action cannot be undone."}
+                confirmText="Delete"
+                variant="destructive"
+            />
         </div>
     )
 }

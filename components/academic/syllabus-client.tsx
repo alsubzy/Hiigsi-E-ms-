@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { toast } from "sonner"
 import { cn } from "@/lib/utils"
+import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 
 import { createSyllabusEntry, deleteSyllabusEntry, SyllabusEntry } from "@/app/actions/syllabus"
 import { ClassRange } from "@/app/actions/classes"
@@ -30,6 +31,8 @@ export function SyllabusClient({ initialSyllabus, classes, subjects, academicYea
     const router = useRouter()
     const [isDialogOpen, setIsDialogOpen] = useState(false)
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+    const [idToDelete, setIdToDelete] = useState<string | null>(null)
 
     // Filter State
     const [selectedClassId, setSelectedClassId] = useState("all")
@@ -89,15 +92,21 @@ export function SyllabusClient({ initialSyllabus, classes, subjects, academicYea
         setFormSubjectId("")
     }
 
-    async function handleDelete(id: string) {
-        if (!confirm("Delete this syllabus?")) return
-        const result = await deleteSyllabusEntry(id)
+    function handleDelete(id: string) {
+        setIdToDelete(id)
+        setIsDeleteDialogOpen(true)
+    }
+
+    async function confirmDelete() {
+        if (!idToDelete) return
+        const result = await deleteSyllabusEntry(idToDelete)
         if (result.success) {
             toast.success(result.message)
             router.refresh()
         } else {
             toast.error(result.error)
         }
+        setIdToDelete(null)
     }
 
     return (
@@ -219,6 +228,16 @@ export function SyllabusClient({ initialSyllabus, classes, subjects, academicYea
                     </form>
                 </DialogContent>
             </Dialog>
+
+            <ConfirmDialog
+                open={isDeleteDialogOpen}
+                onOpenChange={setIsDeleteDialogOpen}
+                onConfirm={confirmDelete}
+                title="Delete Syllabus"
+                description="Are you sure you want to delete this syllabus? This action cannot be undone."
+                confirmText="Delete"
+                variant="destructive"
+            />
         </div>
     )
 }

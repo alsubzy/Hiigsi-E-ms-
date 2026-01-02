@@ -33,25 +33,41 @@ export async function updateSession(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith("/dashboard") && !user) {
     const url = request.nextUrl.clone()
     url.pathname = "/login"
-    return NextResponse.redirect(url)
+    const response = NextResponse.redirect(url)
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      response.cookies.set(cookie.name, cookie.value, cookie)
+    })
+    return response
   }
 
   // Redirect authenticated users from login/signup to dashboard
   if ((request.nextUrl.pathname === "/login" || request.nextUrl.pathname === "/signup") && user) {
     const url = request.nextUrl.clone()
     url.pathname = "/dashboard"
-    return NextResponse.redirect(url)
+    const response = NextResponse.redirect(url)
+    supabaseResponse.cookies.getAll().forEach((cookie) => {
+      response.cookies.set(cookie.name, cookie.value, cookie)
+    })
+    return response
   }
 
   // RBAC: Block non-admins from restricted routes
-  if (user && (request.nextUrl.pathname.startsWith("/dashboard/users") || request.nextUrl.pathname.startsWith("/dashboard/settings"))) {
+  if (
+    user &&
+    (request.nextUrl.pathname.startsWith("/dashboard/users") ||
+      request.nextUrl.pathname.startsWith("/dashboard/settings"))
+  ) {
     // Fetch user profile to check role (more secure than metadata)
     const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).single()
 
     if (profile?.role !== "admin") {
       const url = request.nextUrl.clone()
       url.pathname = "/dashboard"
-      return NextResponse.redirect(url)
+      const response = NextResponse.redirect(url)
+      supabaseResponse.cookies.getAll().forEach((cookie) => {
+        response.cookies.set(cookie.name, cookie.value, cookie)
+      })
+      return response
     }
   }
 
