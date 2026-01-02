@@ -12,7 +12,7 @@ import { Textarea } from "@/components/ui/textarea"
 import { Checkbox } from "@/components/ui/checkbox"
 import { toast } from "sonner"
 import { format } from "date-fns"
-import { FileText, ArrowLeft, Search, GraduationCap } from "lucide-react"
+import { FileText, ArrowLeft, Search, GraduationCap, CheckCircle } from "lucide-react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
@@ -33,8 +33,14 @@ export default function NewInvoicePage() {
 
     async function fetchStudents() {
         const supabase = createClient()
-        const { data } = await supabase.from("students").select("id, full_name, grade").eq("status", "active")
-        setStudents(data || [])
+        const { data } = await supabase.from("students").select("id, first_name, last_name, grade").eq("status", "active")
+
+        const formattedData = data?.map(student => ({
+            ...student,
+            full_name: `${student.first_name} ${student.last_name}`
+        })) || []
+
+        setStudents(formattedData)
         setIsLoading(false)
     }
 
@@ -94,160 +100,158 @@ export default function NewInvoicePage() {
     }
 
     return (
-        <div className="p-6 space-y-6">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center gap-4">
-                    <Link href="/dashboard/accounting/invoices">
-                        <Button variant="outline" size="icon" className="h-10 w-10 rounded-xl">
-                            <ArrowLeft className="h-4 w-4" />
-                        </Button>
-                    </Link>
-                    <div>
-                        <h1 className="text-2xl font-black text-[#1E293B]">Create New Invoice</h1>
-                        <p className="text-sm text-muted-foreground font-medium">Issue billing for tuition and other school fees</p>
-                    </div>
+        <div className="max-w-[1200px] mx-auto p-6 space-y-8">
+            <div className="flex items-center gap-4">
+                <Link href="/dashboard/accounting/invoices">
+                    <Button variant="ghost" size="icon" className="h-10 w-10 text-gray-500">
+                        <ArrowLeft className="h-5 w-5" />
+                    </Button>
+                </Link>
+                <div>
+                    <h1 className="text-2xl font-bold text-gray-900">Create New Invoice</h1>
+                    <p className="text-sm text-gray-500">Bill students for tuition and other fees.</p>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2 space-y-6">
-                    <Card className="border-none shadow-sm">
-                        <CardHeader className="border-b bg-slate-50/50">
-                            <CardTitle className="text-lg font-bold flex items-center gap-2">
-                                <GraduationCap className="w-5 h-5 text-primary" />
-                                Step 1: Select Student
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="pt-6">
-                            <div className="space-y-4">
-                                <div className="relative">
-                                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                                    <select
-                                        className="w-full pl-10 pr-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-2 focus:ring-primary/20 transition-all font-bold appearance-none"
-                                        onChange={(e) => handleStudentChange(e.target.value)}
-                                        defaultValue=""
-                                    >
-                                        <option value="" disabled>Search or select a student...</option>
-                                        {students.map(s => (
-                                            <option key={s.id} value={s.id}>{s.full_name} — Grade {s.grade}</option>
-                                        ))}
-                                    </select>
-                                </div>
-
-                                {selectedStudent && (
-                                    <div className="p-4 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-between animate-in fade-in slide-in-from-top-2">
-                                        <div className="flex items-center gap-3">
-                                            <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-white font-black text-lg">
-                                                {selectedStudent.full_name.charAt(0)}
-                                            </div>
-                                            <div>
-                                                <div className="font-black text-slate-800">{selectedStudent.full_name}</div>
-                                                <div className="text-xs font-bold text-primary uppercase">Grade {selectedStudent.grade}</div>
-                                            </div>
-                                        </div>
-                                        <Badge className="bg-white text-primary border-primary/20 font-bold">Active Student</Badge>
-                                    </div>
-                                )}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Left Column: Selection */}
+                <div className="lg:col-span-2 space-y-8">
+                    {/* Step 1: Student Selection */}
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2 text-primary font-semibold">
+                                <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-xs">1</div>
+                                Select Student
                             </div>
-                        </CardContent>
-                    </Card>
-
-                    <Card className="border-none shadow-sm h-full">
-                        <CardHeader className="border-b bg-slate-50/50">
-                            <CardTitle className="text-lg font-bold flex items-center gap-2">
-                                <FileText className="w-5 h-5 text-primary" />
-                                Step 2: Select Fee Items
-                            </CardTitle>
-                        </CardHeader>
-                        <CardContent className="pt-6">
-                            {!selectedStudent ? (
-                                <div className="h-40 flex flex-col items-center justify-center text-muted-foreground gap-2">
-                                    <Search className="w-8 h-8 opacity-20" />
-                                    <p className="font-bold">Select a student to see pending fees</p>
+                        </div>
+                        <div className="relative">
+                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+                            <select
+                                className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium appearance-none"
+                                onChange={(e) => handleStudentChange(e.target.value)}
+                                defaultValue=""
+                            >
+                                <option value="" disabled>Search or select a student...</option>
+                                {students.map(s => (
+                                    <option key={s.id} value={s.id}>{s.full_name} — Grade {s.grade}</option>
+                                ))}
+                            </select>
+                        </div>
+                        {selectedStudent && (
+                            <div className="p-4 rounded-xl bg-blue-50/50 border border-blue-100 flex items-center gap-4 animate-in fade-in">
+                                <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-lg">
+                                    {selectedStudent.full_name.charAt(0)}
                                 </div>
-                            ) : pendingFees.length === 0 ? (
-                                <div className="h-40 flex flex-col items-center justify-center text-muted-foreground gap-2">
-                                    <Badge variant="outline" className="text-emerald-600 bg-emerald-50 border-emerald-100">ALL SET</Badge>
-                                    <p className="font-bold">No pending fees for this student</p>
+                                <div>
+                                    <div className="font-bold text-gray-900">{selectedStudent.full_name}</div>
+                                    <div className="text-xs font-semibold text-blue-600 uppercase">Grade {selectedStudent.grade}</div>
+                                </div>
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Step 2: Fee Selection */}
+                    {selectedStudent && (
+                        <div className="space-y-4 animate-in slide-in-from-bottom-4 fade-in duration-500">
+                            <div className="flex items-center justify-between">
+                                <div className="flex items-center gap-2 text-primary font-semibold">
+                                    <div className="h-6 w-6 rounded-full bg-primary/10 flex items-center justify-center text-xs">2</div>
+                                    Select Fees to Invoice
+                                </div>
+                            </div>
+
+                            {pendingFees.length === 0 ? (
+                                <div className="flex flex-col items-center justify-center py-10 text-center border-2 border-dashed border-gray-200 rounded-xl">
+                                    <CheckCircle className="h-10 w-10 text-emerald-500 mb-3" />
+                                    <p className="font-medium text-gray-900">No pending fees!</p>
+                                    <p className="text-sm text-gray-500">This student has no unbilled fee items.</p>
                                 </div>
                             ) : (
-                                <div className="space-y-3">
+                                <div className="grid gap-3">
                                     {pendingFees.map(fee => (
                                         <div
                                             key={fee.id}
                                             onClick={() => toggleFee(fee.id)}
-                                            className={`p-4 rounded-xl border-2 transition-all cursor-pointer flex items-center justify-between ${selectedFeeIds.includes(fee.id) ? "border-primary bg-primary/5" : "border-slate-100 hover:border-slate-200"
-                                                }`}
+                                            className={`group relative p-4 rounded-xl border border-gray-200 shadow-sm cursor-pointer transition-all hover:shadow-md ${selectedFeeIds.includes(fee.id) ? "ring-2 ring-primary border-primary bg-primary/5" : "bg-white hover:border-gray-300"}`}
                                         >
-                                            <div className="flex items-center gap-4">
-                                                <Checkbox checked={selectedFeeIds.includes(fee.id)} onCheckedChange={() => toggleFee(fee.id)} />
-                                                <div>
-                                                    <div className="font-bold text-slate-800">{fee.fee_structures?.fee_categories?.name}</div>
-                                                    <div className="text-xs text-muted-foreground font-medium">{fee.discount_reason ? `Discount applied: ${fee.discount_reason}` : 'Standard billing'}</div>
+                                            <div className="flex items-start gap-4">
+                                                <Checkbox
+                                                    checked={selectedFeeIds.includes(fee.id)}
+                                                    onCheckedChange={() => toggleFee(fee.id)}
+                                                    className="mt-1"
+                                                />
+                                                <div className="flex-1">
+                                                    <div className="flex justify-between items-start">
+                                                        <div>
+                                                            <div className="font-bold text-gray-900">{fee.fee_structures?.fee_categories?.name}</div>
+                                                            <p className="text-sm text-gray-500 mt-1">{fee.description || "Tuition fee for current term"}</p>
+                                                            {fee.discount_reason && (
+                                                                <Badge variant="secondary" className="mt-2 text-[10px] bg-emerald-50 text-emerald-700">
+                                                                    {fee.discount_reason}
+                                                                </Badge>
+                                                            )}
+                                                        </div>
+                                                        <div className="text-right">
+                                                            <div className="font-bold text-lg text-gray-900">${Number(fee.net_amount).toLocaleString()}</div>
+                                                            {Number(fee.discount_amount) > 0 && <span className="text-xs text-emerald-600 font-medium">-${fee.discount_amount} discount</span>}
+                                                        </div>
+                                                    </div>
                                                 </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <div className="font-black text-slate-900">${Number(fee.net_amount).toLocaleString()}</div>
-                                                {Number(fee.discount_amount) > 0 && (
-                                                    <div className="text-[10px] text-emerald-600 font-bold italic">-${fee.discount_amount} Discount</div>
-                                                )}
                                             </div>
                                         </div>
                                     ))}
                                 </div>
                             )}
-                        </CardContent>
-                    </Card>
+                        </div>
+                    )}
                 </div>
 
+                {/* Right Column: Preview & Action */}
                 <div className="space-y-6">
-                    <Card className="border-none shadow-sm sticky top-6">
-                        <CardHeader className="border-b bg-slate-900 text-white rounded-t-xl">
-                            <CardTitle className="text-lg font-black uppercase tracking-widest">Invoice Preview</CardTitle>
-                        </CardHeader>
-                        <CardContent className="pt-6 space-y-6">
+                    <Card className="border-gray-200 shadow-sm overflow-hidden sticky top-8">
+                        <div className="bg-gray-50 border-b border-gray-100 p-4">
+                            <h3 className="font-bold text-gray-900">Invoice Summary</h3>
+                        </div>
+                        <CardContent className="p-6 space-y-6">
                             <div className="space-y-4">
-                                <div className="space-y-2">
-                                    <Label className="font-bold text-slate-500 uppercase text-[10px]">Due Date</Label>
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs font-semibold text-gray-500 uppercase">Due Date</Label>
                                     <Input
                                         type="date"
                                         value={dueDate}
                                         onChange={e => setDueDate(e.target.value)}
-                                        className="font-bold h-11 border-slate-200 rounded-xl"
+                                        className="font-medium"
                                     />
                                 </div>
-                                <div className="space-y-2">
-                                    <Label className="font-bold text-slate-500 uppercase text-[10px]">Administrative Notes</Label>
+                                <div className="space-y-1.5">
+                                    <Label className="text-xs font-semibold text-gray-500 uppercase">Notes (Optional)</Label>
                                     <Textarea
-                                        placeholder="E.g. Term 1 Balance, Part of scholarship agreement..."
+                                        placeholder="Add a note to this invoice..."
                                         value={notes}
                                         onChange={e => setNotes(e.target.value)}
-                                        className="font-medium border-slate-200 rounded-xl min-h-[100px]"
+                                        className="resize-none min-h-[80px]"
                                     />
                                 </div>
                             </div>
 
-                            <div className="pt-4 border-t border-slate-100 space-y-3">
-                                <div className="flex justify-between text-sm font-bold text-slate-500">
-                                    <span>Subtotal</span>
-                                    <span>${totalAmount.toLocaleString()}</span>
+                            <div className="pt-4 border-t border-gray-100 space-y-3">
+                                <div className="flex justify-between text-sm text-gray-600">
+                                    <span>Subtotal ({selectedFeeIds.length} items)</span>
+                                    <span className="font-medium">${totalAmount.toLocaleString()}</span>
                                 </div>
-                                <div className="flex justify-between text-2xl font-black text-slate-900 pt-2">
-                                    <span>Total Due</span>
-                                    <span>${totalAmount.toLocaleString()}</span>
+                                <div className="flex justify-between items-end pt-2">
+                                    <span className="font-bold text-gray-900 pb-1">Total Due</span>
+                                    <span className="text-3xl font-bold text-gray-900 tracking-tight">${totalAmount.toLocaleString()}</span>
                                 </div>
                             </div>
 
                             <Button
                                 onClick={handleSubmit}
                                 disabled={isSubmitting || selectedFeeIds.length === 0}
-                                className="w-full h-14 rounded-xl font-black text-lg shadow-xl shadow-primary/20"
+                                className="w-full h-12 text-base font-semibold shadow-lg shadow-primary/20"
                             >
-                                {isSubmitting ? "Generating..." : "Post & Issue Invoice"}
+                                {isSubmitting ? "Creating Invoice..." : "Create Invoice"}
                             </Button>
-                            <p className="text-[10px] text-center text-muted-foreground font-medium italic">
-                                This will create a receivable in the ledger and notify the student/parent via the system dashboard.
-                            </p>
                         </CardContent>
                     </Card>
                 </div>

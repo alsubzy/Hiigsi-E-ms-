@@ -29,7 +29,8 @@ export default function InvoiceDetailPage() {
                 .select(`
           *,
           students (
-            full_name,
+            first_name,
+            last_name,
             grade,
             id
           ),
@@ -48,7 +49,18 @@ export default function InvoiceDetailPage() {
                 .single()
 
             if (error) throw error
-            setInvoice(data)
+            if (error) throw error
+
+            // Format student name
+            const formattedData = {
+                ...data,
+                students: data.students ? {
+                    ...data.students,
+                    full_name: `${data.students.first_name} ${data.students.last_name}`
+                } : null
+            }
+
+            setInvoice(formattedData)
         } catch (error: any) {
             toast.error(error.message)
         } finally {

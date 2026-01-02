@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
-import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+
 import { Header } from "@/components/dashboard/header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Users, ClipboardCheck, GraduationCap, DollarSign } from "lucide-react"
@@ -103,7 +103,7 @@ export default async function DashboardPage() {
   ]
 
   return (
-    <DashboardLayout user={profile}>
+    <>
       <Header title={`Welcome back, ${profile.full_name}`} description="Here's what's happening in your school today" />
       <div className="p-6">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
@@ -199,6 +199,6 @@ export default async function DashboardPage() {
           </Card>
         </div>
       </div>
-    </DashboardLayout>
+    </>
   )
 }
