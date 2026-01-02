@@ -3,233 +3,315 @@
 import { createClient } from "@/lib/supabase/server"
 import { revalidatePath } from "next/cache"
 
-export async function getPayments(studentId?: string, startDate?: string, endDate?: string) {
+/**
+ * CHART OF ACCOUNTS (COA) ACTIONS
+ */
+
+export async function getAccounts() {
   const supabase = await createClient()
-
-  let query = supabase
-    .from("payments")
-    .select(
-      `
-      *,
-      students:student_id (*)
-    `,
-    )
-    .order("payment_date", { ascending: false })
-
-  if (studentId) {
-    query = query.eq("student_id", studentId)
-  }
-
-  if (startDate) {
-    query = query.gte("payment_date", startDate)
-  }
-
-  if (endDate) {
-    query = query.lte("payment_date", endDate)
-  }
-
-  const { data, error } = await query
+  const { data, error } = await supabase
+    .from("accounts")
+    .select("*")
+    .order("code", { ascending: true })
 
   if (error) {
-    console.error("Error fetching payments:", error)
-    return []
+    if (error.message.includes("Could not find the table")) {
+      throw new Error("Accounting tables not found. Please run the SQL scripts in the 'scripts' folder (starting with 015) in your Supabase SQL Editor.")
+    }
+    throw new Error(error.message)
   }
-
   return data
 }
 
-export async function createPayment(paymentData: {
-  student_id: string
-  amount: number
-  fee_type: string
-  payment_method: string
-  transaction_id?: string
-  payment_date: string
-  notes?: string
+export async function createAccount(data: {
+  name: string
+  code: string
+  type: "asset" | "liability" | "equity" | "income" | "expense"
+  parent_id?: string
+  description?: string
 }) {
   const supabase = await createClient()
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
+  const { error } = await supabase.from("accounts").insert(data)
+  if (error) throw new Error(error.message)
+  revalidatePath("/dashboard/accounting/coa")
+}
 
-  if (!user) {
-    throw new Error("Unauthorized")
+/**
+ * GENERAL LEDGER ENGINE
+ * This is the core function for double-entry bookkeeping.
+ */
+
+interface JournalEntryLine {
+  account_id: string
+  debit: number
+  credit: number
+  notes?: string
+}
+
+export async function postTransaction(
+  description: string,
+  type: string,
+  lines: JournalEntryLine[],
+  reference_no?: string,
+  date: string = new Date().toISOString().split("T")[0],
+) {
+  const supabase = await createClient()
+
+  // 1. Validate balanced transaction
+  const totalDebit = lines.reduce((sum, line) => sum + line.debit, 0)
+  const totalCredit = lines.reduce((sum, line) => sum + line.credit, 0)
+
+  if (Math.abs(totalDebit - totalCredit) > 0.001) {
+    throw new Error(`Transaction must balance. Debits ($${totalDebit}) != Credits ($${totalCredit})`)
   }
 
-  const { data, error } = await supabase
-    .from("payments")
+  // 2. Get current academic year
+  const { data: ay } = await supabase.from("academic_years").select("id").eq("is_current", true).single()
+
+  // 3. Create Transaction Header
+  const { data: tx, error: txError } = await supabase
+    .from("transactions")
     .insert({
-      ...paymentData,
-      status: "completed",
-      recorded_by: user.id,
-      created_at: new Date().toISOString(),
+      description,
+      type,
+      reference_no,
+      date,
+      academic_year_id: ay?.id,
     })
     .select()
     .single()
 
-  if (error) {
-    console.error("Error creating payment:", error)
-    throw new Error(error.message)
+  if (txError) throw new Error(txError.message)
+
+  // 4. Create Journal Entries
+  const journalEntries = lines.map((line) => ({
+    transaction_id: tx.id,
+    account_id: line.account_id,
+    debit: line.debit,
+    credit: line.credit,
+    notes: line.notes,
+  }))
+
+  const { error: jeError } = await supabase.from("journal_entries").insert(journalEntries)
+
+  if (jeError) {
+    // Note: Transaction header is already created. 
+    // In a real production environment, this should be wrapped in a database TRANSACTION (RPC).
+    console.error("Critical: Failed to insert journal entries after transaction header was created.")
+    throw new Error(jeError.message)
   }
 
-  revalidatePath("/dashboard/accounting")
+  revalidatePath("/dashboard/accounting/ledger")
+  return tx
+}
+
+/**
+ * FEE MANAGEMENT ACTIONS
+ */
+
+export async function getFeeCategories() {
+  const supabase = await createClient()
+  const { data, error } = await supabase.from("fee_categories").select("*, accounts(*)")
+  if (error) throw new Error(error.message)
   return data
 }
 
-export async function getFeeStructure() {
+export async function getStudentFees(studentId?: string) {
+  const supabase = await createClient()
+  let query = supabase.from("student_fees").select("*, fee_structures(*, fee_categories(*)), students(*)")
+  if (studentId) query = query.eq("student_id", studentId)
+  const { data, error } = await query
+  if (error) throw new Error(error.message)
+  return data
+}
+
+/**
+ * INVOICING ACTIONS
+ */
+
+export async function createInvoice(data: {
+  student_id: string
+  fee_ids: string[]
+  due_date: string
+  notes?: string
+}) {
   const supabase = await createClient()
 
-  const { data, error } = await supabase.from("fee_structure").select("*").order("grade")
+  // 1. Get student fees info
+  const { data: fees, error: feesError } = await supabase
+    .from("student_fees")
+    .select("net_amount")
+    .in("id", data.fee_ids)
 
+  if (feesError) throw new Error(feesError.message)
+
+  const totalAmount = fees.reduce((sum, fee) => sum + Number(fee.net_amount), 0)
+
+  // 2. Create Invoice
+  const invoice_no = `INV-${Date.now()}`
+  const { data: invoice, error: invError } = await supabase
+    .from("invoices")
+    .insert({
+      invoice_no,
+      student_id: data.student_id,
+      total_amount: totalAmount,
+      due_date: data.due_date,
+      notes: data.notes,
+    })
+    .select()
+    .single()
+
+  if (invError) throw new Error(invError.message)
+
+  // 3. Link fees to invoice
+  const invoiceItems = data.fee_ids.map((feeId, index) => ({
+    invoice_id: invoice.id,
+    student_fee_id: feeId,
+    amount: fees[index].net_amount,
+  }))
+
+  const { error: itemError } = await supabase.from("invoice_items").insert(invoiceItems)
+  if (itemError) throw new Error(itemError.message)
+
+  // 4. POST TO LEDGER (Accrual Basis)
+  // Debit: Accounts Receivable (1200)
+  // Credit: Fee Income (linked to category or generic 4100)
+
+  // For simplicity here, we fetch the accounts by code. 
+  // In a real system, these would be configuration-driven.
+  const { data: recAccount } = await supabase.from("accounts").select("id").eq("code", "1200").single()
+  const { data: incAccount } = await supabase.from("accounts").select("id").eq("code", "4100").single()
+
+  if (recAccount && incAccount) {
+    await postTransaction(
+      `Invoicing for ${invoice_no}`,
+      "fee_assignment",
+      [
+        { account_id: recAccount.id, debit: totalAmount, credit: 0 },
+        { account_id: incAccount.id, debit: 0, credit: totalAmount },
+      ],
+      invoice_no
+    )
+  }
+
+  revalidatePath("/dashboard/accounting/invoices")
+  return invoice
+}
+
+/**
+ * PAYMENT ACTIONS
+ */
+
+export async function processPayment(data: {
+  invoice_id: string
+  amount: number
+  payment_method: string
+  bank_account_id?: string
+  payment_date: string
+  notes?: string
+}) {
+  const supabase = await createClient()
+
+  // 1. Get Invoice & Student
+  const { data: invoice, error: invError } = await supabase
+    .from("invoices")
+    .select("student_id, invoice_no, paid_amount, total_amount")
+    .eq("id", data.invoice_id)
+    .single()
+
+  if (invError) throw new Error(invError.message)
+
+  // 2. Create Payment Record
+  const payment_no = `PAY-${Date.now()}`
+  const { data: payment, error: payError } = await supabase
+    .from("accounting_payments")
+    .insert({
+      payment_no,
+      invoice_id: data.invoice_id,
+      student_id: invoice.student_id,
+      amount: data.amount,
+      payment_date: data.payment_date,
+      payment_method: data.payment_method,
+      bank_account_id: data.bank_account_id,
+      notes: data.notes,
+    })
+    .select()
+    .single()
+
+  if (payError) throw new Error(payError.message)
+
+  // 3. Update Invoice Paid Amount & Status
+  const newPaidAmount = Number(invoice.paid_amount) + Number(data.amount)
+  const newStatus = newPaidAmount >= Number(invoice.total_amount) ? "paid" : "partial"
+
+  await supabase
+    .from("invoices")
+    .update({ paid_amount: newPaidAmount, status: newStatus })
+    .eq("id", data.invoice_id)
+
+  // 4. POST TO LEDGER
+  // Debit: Cash (1110) or Bank (linked to bank_account_id)
+  // Credit: Accounts Receivable (1200)
+
+  const { data: recAccount } = await supabase.from("accounts").select("id").eq("code", "1200").single()
+
+  // Determine debit account
+  let debitAccountId: string | undefined
+  if (data.bank_account_id) {
+    const { data: bank } = await supabase.from("bank_accounts").select("gl_account_id").eq("id", data.bank_account_id).single()
+    debitAccountId = bank?.gl_account_id
+  } else {
+    const { data: cashAccount } = await supabase.from("accounts").select("id").eq("code", "1110").single()
+    debitAccountId = cashAccount?.id
+  }
+
+  if (recAccount && debitAccountId) {
+    await postTransaction(
+      `Payment received for ${invoice.invoice_no}`,
+      "payment",
+      [
+        { account_id: debitAccountId, debit: data.amount, credit: 0 },
+        { account_id: recAccount.id, debit: 0, credit: data.amount },
+      ],
+      payment_no
+    )
+  }
+
+  revalidatePath("/dashboard/accounting/payments")
+  return payment
+}
+
+/**
+ * REPORTING DATA FETCHERS
+ */
+
+export async function getTrialBalance() {
+  const supabase = await createClient()
+  // Complex query: Sum debits and credits per account
+  const { data, error } = await supabase.rpc("get_trial_balance")
   if (error) {
-    console.error("Error fetching fee structure:", error)
+    // Fallback if RPC doesn't exist yet
     return []
   }
-
   return data
-}
-
-export async function getStudentFeeStatus() {
-  const supabase = await createClient()
-
-  // Get all active students
-  const { data: students } = await supabase.from("students").select("*").eq("status", "active")
-
-  if (!students) return []
-
-  // Get current month date range
-  const now = new Date()
-  const currentMonth = now.toISOString().slice(0, 7)
-
-  // Get payments for current month
-  const { data: payments } = await supabase
-    .from("payments")
-    .select("student_id, amount")
-    .gte("payment_date", `${currentMonth}-01`)
-    .eq("status", "completed")
-
-  // Calculate fee status for each student
-  const feeStatus = await Promise.all(
-    students.map(async (student) => {
-      const { data: feeStructure } = await supabase
-        .from("fee_structure")
-        .select("amount")
-        .eq("grade", student.grade)
-        .eq("frequency", "monthly")
-
-      const totalDue = feeStructure?.reduce((sum, f) => sum + Number(f.amount), 0) || 0
-
-      const studentPayments = payments?.filter((p) => p.student_id === student.id) || []
-      const totalPaid = studentPayments.reduce((sum, p) => sum + Number(p.amount), 0)
-
-      const balance = totalDue - totalPaid
-
-      return {
-        student,
-        totalDue,
-        totalPaid,
-        balance,
-        status: balance <= 0 ? "paid" : totalPaid > 0 ? "partial" : "unpaid",
-      }
-    }),
-  )
-
-  return feeStatus
 }
 
 export async function getAccountingStats() {
   const supabase = await createClient()
 
-  const now = new Date()
-  const currentMonth = now.toISOString().slice(0, 7)
-  const currentYear = now.getFullYear().toString()
+  // Total Revenue (Income accounts sum)
+  const { data: income } = await supabase.rpc("get_total_revenue")
 
-  // Monthly revenue
-  const { data: monthlyPayments } = await supabase
-    .from("payments")
-    .select("amount")
-    .gte("payment_date", `${currentMonth}-01`)
-    .eq("status", "completed")
+  // Outstanding Receivables
+  const { data: receivables } = await supabase.rpc("get_total_receivables")
 
-  const monthlyRevenue = monthlyPayments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0
-
-  // Yearly revenue
-  const { data: yearlyPayments } = await supabase
-    .from("payments")
-    .select("amount")
-    .gte("payment_date", `${currentYear}-01-01`)
-    .eq("status", "completed")
-
-  const yearlyRevenue = yearlyPayments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0
-
-  // Pending amount
-  const { data: students } = await supabase.from("students").select("grade").eq("status", "active")
-
-  let totalExpected = 0
-  if (students) {
-    for (const student of students) {
-      const { data: feeStructure } = await supabase
-        .from("fee_structure")
-        .select("amount")
-        .eq("grade", student.grade)
-        .eq("frequency", "monthly")
-
-      const studentFee = feeStructure?.reduce((sum, f) => sum + Number(f.amount), 0) || 0
-      totalExpected += studentFee
-    }
-  }
-
-  const pendingAmount = totalExpected - monthlyRevenue
+  // Cash Balance
+  const { data: cash } = await supabase.rpc("get_cash_balance")
 
   return {
-    monthlyRevenue,
-    yearlyRevenue,
-    pendingAmount,
-    totalExpected,
+    monthlyRevenue: income || 0,
+    pendingAmount: receivables || 0,
+    cashBalance: cash || 0,
+    totalExpected: (income || 0) + (receivables || 0)
   }
-}
-
-export async function recordPayment(paymentData: {
-  student_id: string
-  amount: number
-  payment_date: string
-  payment_method: "cash" | "card" | "bank_transfer" | "online" | "cheque"
-  fee_type: string
-  transaction_id?: string
-  remarks?: string
-}) {
-  const supabase = await createClient()
-
-  const {
-    data: { user },
-  } = await supabase.auth.getUser()
-
-  if (!user) {
-    return { success: false, error: "Unauthorized" }
-  }
-
-  const { data, error } = await supabase
-    .from("payments")
-    .insert([
-      {
-        student_id: paymentData.student_id,
-        amount: paymentData.amount,
-        payment_date: paymentData.payment_date,
-        payment_method: paymentData.payment_method,
-        fee_type: paymentData.fee_type,
-        transaction_id: paymentData.transaction_id,
-        remarks: paymentData.remarks,
-        status: "completed",
-      },
-    ])
-    .select()
-    .single()
-
-  if (error) {
-    console.error("Error recording payment:", error)
-    return { success: false, error: error.message }
-  }
-
-  revalidatePath("/dashboard/accounting")
-  return { success: true, data }
 }

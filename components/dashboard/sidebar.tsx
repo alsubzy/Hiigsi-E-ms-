@@ -20,6 +20,8 @@ import {
   Calendar as CalendarIcon,
   Clock,
   FileText,
+  FolderTree,
+  Receipt,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -112,8 +114,26 @@ const navItems: NavItem[] = [
     roles: ["admin", "accountant"],
   },
   {
-    title: "Reports",
-    href: "/dashboard/reports",
+    title: "Chart of Accounts",
+    href: "/dashboard/accounting/coa",
+    icon: FolderTree,
+    roles: ["admin", "accountant"],
+  },
+  {
+    title: "Student Fees",
+    href: "/dashboard/accounting/fees",
+    icon: Receipt,
+    roles: ["admin", "accountant"],
+  },
+  {
+    title: "General Ledger",
+    href: "/dashboard/accounting/ledger",
+    icon: FileText,
+    roles: ["admin", "accountant"],
+  },
+  {
+    title: "Financial Reports",
+    href: "/dashboard/accounting/reports",
     icon: BarChart3,
     roles: ["admin", "accountant"],
   },
