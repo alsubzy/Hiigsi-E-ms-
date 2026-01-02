@@ -31,7 +31,7 @@ export async function createAccount(data: {
   description?: string
 }) {
   const supabase = await createClient()
-  const { error } = await supabase.from("accounts").insert(data)
+  const { error } = await supabase.from("accounts").insert({ ...data, is_active: true })
   if (error) throw new Error(error.message)
   revalidatePath("/dashboard/accounting/coa")
 }
@@ -95,14 +95,71 @@ export async function postTransaction(
   const { error: jeError } = await supabase.from("journal_entries").insert(journalEntries)
 
   if (jeError) {
-    // Note: Transaction header is already created. 
-    // In a real production environment, this should be wrapped in a database TRANSACTION (RPC).
-    console.error("Critical: Failed to insert journal entries after transaction header was created.")
+    console.error("Failed to insert journal entries:", jeError)
     throw new Error(jeError.message)
   }
 
   revalidatePath("/dashboard/accounting/ledger")
   return tx
+}
+
+/**
+ * EXPENSE & INCOME ACTIONS
+ */
+
+export async function recordExpense(data: {
+  account_id: string // The expense GL account
+  amount: number
+  vendor: string
+  payment_method: string
+  bank_account_id?: string
+  description: string
+  date: string
+}) {
+  const supabase = await createClient()
+  const expense_no = `EXP-${Date.now()}`
+
+  const { data: expense, error } = await supabase
+    .from("expenses")
+    .insert({
+      ...data,
+      expense_no,
+      status: "paid"
+    })
+    .select()
+    .single()
+
+  if (error) throw new Error(error.message)
+
+  revalidatePath("/dashboard/accounting/expenses")
+  return expense
+}
+
+export async function recordOtherIncome(data: {
+  account_id: string // The income GL account
+  amount: number
+  source: string
+  payment_method: string
+  bank_account_id?: string
+  description: string
+  date: string
+}) {
+  const supabase = await createClient()
+  const income_no = `INC-${Date.now()}`
+
+  const { data: income, error } = await supabase
+    .from("other_incomes")
+    .insert({
+      ...data,
+      income_no
+    })
+    .select()
+    .single()
+
+  if (error) throw new Error(error.message)
+
+  revalidatePath("/dashboard/accounting/income")
+  return income
 }
 
 /**
@@ -126,7 +183,7 @@ export async function getStudentFees(studentId?: string) {
 }
 
 /**
- * INVOICING ACTIONS
+ * INVOICING & PAYMENTS
  */
 
 export async function createInvoice(data: {
@@ -137,10 +194,10 @@ export async function createInvoice(data: {
 }) {
   const supabase = await createClient()
 
-  // 1. Get student fees info
+  // 1. Get net amounts from fees
   const { data: fees, error: feesError } = await supabase
     .from("student_fees")
-    .select("net_amount")
+    .select("net_amount, id")
     .in("id", data.fee_ids)
 
   if (feesError) throw new Error(feesError.message)
@@ -163,44 +220,18 @@ export async function createInvoice(data: {
 
   if (invError) throw new Error(invError.message)
 
-  // 3. Link fees to invoice
-  const invoiceItems = data.fee_ids.map((feeId, index) => ({
+  // 3. Link items
+  const invoiceItems = fees.map((f) => ({
     invoice_id: invoice.id,
-    student_fee_id: feeId,
-    amount: fees[index].net_amount,
+    student_fee_id: f.id,
+    amount: f.net_amount,
   }))
 
-  const { error: itemError } = await supabase.from("invoice_items").insert(invoiceItems)
-  if (itemError) throw new Error(itemError.message)
-
-  // 4. POST TO LEDGER (Accrual Basis)
-  // Debit: Accounts Receivable (1200)
-  // Credit: Fee Income (linked to category or generic 4100)
-
-  // For simplicity here, we fetch the accounts by code. 
-  // In a real system, these would be configuration-driven.
-  const { data: recAccount } = await supabase.from("accounts").select("id").eq("code", "1200").single()
-  const { data: incAccount } = await supabase.from("accounts").select("id").eq("code", "4100").single()
-
-  if (recAccount && incAccount) {
-    await postTransaction(
-      `Invoicing for ${invoice_no}`,
-      "fee_assignment",
-      [
-        { account_id: recAccount.id, debit: totalAmount, credit: 0 },
-        { account_id: incAccount.id, debit: 0, credit: totalAmount },
-      ],
-      invoice_no
-    )
-  }
+  await supabase.from("invoice_items").insert(invoiceItems)
 
   revalidatePath("/dashboard/accounting/invoices")
   return invoice
 }
-
-/**
- * PAYMENT ACTIONS
- */
 
 export async function processPayment(data: {
   invoice_id: string
@@ -212,14 +243,14 @@ export async function processPayment(data: {
 }) {
   const supabase = await createClient()
 
-  // 1. Get Invoice & Student
-  const { data: invoice, error: invError } = await supabase
+  // 1. Get Invoice
+  const { data: invoice } = await supabase
     .from("invoices")
     .select("student_id, invoice_no, paid_amount, total_amount")
     .eq("id", data.invoice_id)
     .single()
 
-  if (invError) throw new Error(invError.message)
+  if (!invoice) throw new Error("Invoice not found")
 
   // 2. Create Payment Record
   const payment_no = `PAY-${Date.now()}`
@@ -240,7 +271,7 @@ export async function processPayment(data: {
 
   if (payError) throw new Error(payError.message)
 
-  // 3. Update Invoice Paid Amount & Status
+  // 3. Update Invoice Status
   const newPaidAmount = Number(invoice.paid_amount) + Number(data.amount)
   const newStatus = newPaidAmount >= Number(invoice.total_amount) ? "paid" : "partial"
 
@@ -249,36 +280,25 @@ export async function processPayment(data: {
     .update({ paid_amount: newPaidAmount, status: newStatus })
     .eq("id", data.invoice_id)
 
-  // 4. POST TO LEDGER
-  // Debit: Cash (1110) or Bank (linked to bank_account_id)
-  // Credit: Accounts Receivable (1200)
-
-  const { data: recAccount } = await supabase.from("accounts").select("id").eq("code", "1200").single()
-
-  // Determine debit account
-  let debitAccountId: string | undefined
-  if (data.bank_account_id) {
-    const { data: bank } = await supabase.from("bank_accounts").select("gl_account_id").eq("id", data.bank_account_id).single()
-    debitAccountId = bank?.gl_account_id
-  } else {
-    const { data: cashAccount } = await supabase.from("accounts").select("id").eq("code", "1110").single()
-    debitAccountId = cashAccount?.id
-  }
-
-  if (recAccount && debitAccountId) {
-    await postTransaction(
-      `Payment received for ${invoice.invoice_no}`,
-      "payment",
-      [
-        { account_id: debitAccountId, debit: data.amount, credit: 0 },
-        { account_id: recAccount.id, debit: 0, credit: data.amount },
-      ],
-      payment_no
-    )
-  }
-
   revalidatePath("/dashboard/accounting/payments")
+  revalidatePath("/dashboard/accounting/invoices")
   return payment
+}
+
+/**
+ * AUDIT LOGS
+ */
+
+export async function getAuditLogs(limit = 100) {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("accounting_audit_logs")
+    .select("*, auth.users(email)")
+    .order("created_at", { ascending: false })
+    .limit(limit)
+
+  if (error) throw new Error(error.message)
+  return data
 }
 
 /**
@@ -289,10 +309,7 @@ export async function getTrialBalance() {
   const supabase = await createClient()
   // Complex query: Sum debits and credits per account
   const { data, error } = await supabase.rpc("get_trial_balance")
-  if (error) {
-    // Fallback if RPC doesn't exist yet
-    return []
-  }
+  if (error) return []
   return data
 }
 
@@ -308,10 +325,18 @@ export async function getAccountingStats() {
   // Cash Balance
   const { data: cash } = await supabase.rpc("get_cash_balance")
 
+  // Recent Transactions
+  const { data: recentTransactions } = await supabase
+    .from("transactions")
+    .select("*")
+    .order("date", { ascending: false })
+    .limit(10)
+
   return {
     monthlyRevenue: income || 0,
     pendingAmount: receivables || 0,
     cashBalance: cash || 0,
-    totalExpected: (income || 0) + (receivables || 0)
+    totalExpected: (income || 0) + (receivables || 0),
+    recentTransactions: recentTransactions || []
   }
 }

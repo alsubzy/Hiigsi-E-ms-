@@ -1,7 +1,10 @@
+
 "use client"
 
 import { Bell } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import { ModeToggle } from "@/components/mode-toggle"
+import { LanguageToggle } from "@/components/language-toggle"
 
 interface HeaderProps {
   title: string
@@ -15,9 +18,13 @@ export function Header({ title, description }: HeaderProps) {
         <h1 className="text-2xl font-semibold">{title}</h1>
         {description && <p className="text-sm text-muted-foreground">{description}</p>}
       </div>
-      <Button variant="ghost" size="icon">
-        <Bell className="h-5 w-5" />
-      </Button>
+      <div className="flex items-center gap-2">
+        <LanguageToggle />
+        <ModeToggle />
+        <Button variant="ghost" size="icon">
+          <Bell className="h-5 w-5" />
+        </Button>
+      </div>
     </div>
   )
 }

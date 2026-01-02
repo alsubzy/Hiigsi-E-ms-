@@ -1,80 +1,149 @@
+"use client"
+
+import { useState, useEffect } from "react"
 import { getAccounts } from "@/app/actions/accounting"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Plus, FolderTree } from "lucide-react"
+import { Input } from "@/components/ui/input"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Plus, Search, FolderTree, ChevronRight, ChevronDown, Activity, ShieldCheck } from "lucide-react"
+import { toast } from "sonner"
 
-export default async function COAPage() {
-    const accounts = await getAccounts()
+export default function COAPage() {
+    const [accounts, setAccounts] = useState<any[]>([])
+    const [isLoading, setIsLoading] = useState(true)
+    const [searchTerm, setSearchTerm] = useState("")
 
-    const typeColors: Record<string, string> = {
-        asset: "bg-blue-100 text-blue-800",
-        liability: "bg-red-100 text-red-800",
-        equity: "bg-purple-100 text-purple-800",
-        income: "bg-emerald-100 text-emerald-800",
-        expense: "bg-orange-100 text-orange-800",
+    useEffect(() => {
+        fetchData()
+    }, [])
+
+    async function fetchData() {
+        try {
+            const data = await getAccounts()
+            setAccounts(data)
+        } catch (error: any) {
+            toast.error(error.message)
+        } finally {
+            setIsLoading(false)
+        }
     }
 
+    const typeColors: Record<string, string> = {
+        asset: "bg-blue-50 text-blue-700 border-blue-100",
+        liability: "bg-red-50 text-red-700 border-red-100",
+        equity: "bg-purple-50 text-purple-700 border-purple-100",
+        income: "bg-emerald-50 text-emerald-700 border-emerald-100",
+        expense: "bg-orange-50 text-orange-700 border-orange-100",
+    }
+
+    const filteredAccounts = accounts.filter(acc =>
+        acc.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        acc.code.includes(searchTerm)
+    )
+
+    // Group accounts by type for the summary
+    const summary = accounts.reduce((acc: any, curr: any) => {
+        acc[curr.type] = (acc[curr.type] || 0) + 1
+        return acc
+    }, {})
+
     return (
-        <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-            <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                    <FolderTree className="h-6 w-6" />
-                    <h2 className="text-3xl font-bold tracking-tight">Chart of Accounts</h2>
+        <div className="p-6 space-y-6">
+            <div className="flex justify-between items-center">
+                <div>
+                    <h1 className="text-3xl font-black text-[#1E293B]">Chart of Accounts</h1>
+                    <p className="text-muted-foreground font-medium">Standard school financial structure and GL account mapping</p>
                 </div>
-                <Button>
-                    <Plus className="mr-2 h-4 w-4" /> Add Account
-                </Button>
+                <div className="flex gap-2">
+                    <Button className="font-bold gap-2 shadow-lg shadow-primary/20">
+                        <Plus className="w-4 h-4" /> Add GL Account
+                    </Button>
+                </div>
             </div>
 
-            <Card>
-                <CardHeader>
-                    <CardTitle>All Accounts</CardTitle>
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                {Object.entries(summary).map(([type, count]: [any, any]) => (
+                    <Card key={type} className="border-none shadow-sm overflow-hidden group">
+                        <div className={`h-1 w-full ${typeColors[type]?.split(' ')[0]}`} />
+                        <CardContent className="pt-4">
+                            <div className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{type}s</div>
+                            <div className="text-2xl font-black text-slate-800 group-hover:text-primary transition-colors">{count}</div>
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+
+            <Card className="border-none shadow-sm overflow-hidden">
+                <CardHeader className="bg-slate-50/50 border-b">
+                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                        <div className="flex items-center gap-2">
+                            <ShieldCheck className="w-5 h-5 text-emerald-500" />
+                            <CardTitle className="text-lg font-black uppercase tracking-tight">Financial GL Map</CardTitle>
+                        </div>
+                        <div className="relative">
+                            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
+                            <Input
+                                placeholder="Filter by code or name..."
+                                className="pl-9 w-[300px] border-slate-200 rounded-xl font-medium"
+                                value={searchTerm}
+                                onChange={e => setSearchTerm(e.target.value)}
+                            />
+                        </div>
+                    </div>
                 </CardHeader>
-                <CardContent>
-                    <div className="rounded-md border">
-                        <table className="w-full text-sm">
-                            <thead>
-                                <tr className="border-b bg-muted/50 transition-colors">
-                                    <th className="h-12 px-4 text-left align-middle font-medium">Code</th>
-                                    <th className="h-12 px-4 text-left align-middle font-medium">Name</th>
-                                    <th className="h-12 px-4 text-left align-middle font-medium">Type</th>
-                                    <th className="h-12 px-4 text-left align-middle font-medium">Description</th>
-                                    <th className="h-12 px-4 text-left align-middle font-medium">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody className="[&_tr:last-child]:border-0">
-                                {accounts.map((account) => (
-                                    <tr key={account.id} className="border-b transition-colors hover:bg-muted/50 cursor-pointer">
-                                        <td className="p-4 align-middle font-mono">{account.code}</td>
-                                        <td className="p-4 align-middle">
-                                            <div className="flex items-center">
-                                                {account.parent_id && <span className="mr-2 text-muted-foreground">↳</span>}
-                                                <span className={account.parent_id ? "text-muted-foreground" : "font-semibold"}>
-                                                    {account.name}
+                <CardContent className="p-0">
+                    {isLoading ? (
+                        <div className="h-60 flex flex-col items-center justify-center text-muted-foreground font-bold gap-2">
+                            <Activity className="w-8 h-8 animate-spin text-primary" />
+                            Initializing Ledger Schema...
+                        </div>
+                    ) : (
+                        <Table>
+                            <TableHeader className="bg-slate-50/20">
+                                <TableRow className="hover:bg-transparent border-slate-100">
+                                    <TableHead className="font-bold text-slate-400 pl-6 w-[120px]">Account Code</TableHead>
+                                    <TableHead className="font-bold text-slate-400">Account Name</TableHead>
+                                    <TableHead className="font-bold text-slate-400">Classification</TableHead>
+                                    <TableHead className="font-bold text-slate-400">Description</TableHead>
+                                    <TableHead className="font-bold text-slate-400 text-center pr-6">System Status</TableHead>
+                                </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                                {filteredAccounts.map((acc) => (
+                                    <TableRow key={acc.id} className="border-slate-50 group hover:bg-slate-50/50 transition-colors">
+                                        <TableCell className="pl-6 font-mono text-xs font-black text-slate-500">
+                                            {acc.code}
+                                        </TableCell>
+                                        <TableCell>
+                                            <div className="flex items-center gap-3">
+                                                {acc.parent_id && <ChevronRight className="w-3 h-3 text-slate-300" />}
+                                                <span className={`font-bold transition-colors ${acc.parent_id ? "text-slate-500 text-sm" : "text-slate-900"}`}>
+                                                    {acc.name}
                                                 </span>
                                             </div>
-                                        </td>
-                                        <td className="p-4 align-middle">
-                                            <Badge className={typeColors[account.type] || ""}>
-                                                {account.type.toUpperCase()}
+                                        </TableCell>
+                                        <TableCell>
+                                            <Badge className={`${typeColors[acc.type] || ""} border-none font-black text-[9px] uppercase tracking-widest px-2 py-1 shadow-none`}>
+                                                {acc.type}
                                             </Badge>
-                                        </td>
-                                        <td className="p-4 align-middle text-muted-foreground">
-                                            {account.description || "-"}
-                                        </td>
-                                        <td className="p-4 align-middle">
-                                            {account.is_active ? (
-                                                <Badge variant="outline" className="text-emerald-600 border-emerald-200 bg-emerald-50">Active</Badge>
+                                        </TableCell>
+                                        <TableCell className="text-slate-400 text-xs italic max-w-[300px] truncate">
+                                            {acc.description || "—"}
+                                        </TableCell>
+                                        <TableCell className="text-center pr-6">
+                                            {acc.is_active ? (
+                                                <Badge variant="outline" className="text-emerald-600 bg-emerald-50 border-emerald-100 font-bold text-[10px]">VERIFIED</Badge>
                                             ) : (
-                                                <Badge variant="outline" className="text-gray-400 border-gray-200">Inactive</Badge>
+                                                <Badge variant="outline" className="text-slate-400 border-slate-200 font-bold text-[10px]">DISABLED</Badge>
                                             )}
-                                        </td>
-                                    </tr>
+                                        </TableCell>
+                                    </TableRow>
                                 ))}
-                            </tbody>
-                        </table>
-                    </div>
+                            </TableBody>
+                        </Table>
+                    )}
                 </CardContent>
             </Card>
         </div>

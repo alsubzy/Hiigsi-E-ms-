@@ -1,5 +1,4 @@
--- ACCOUNTING RPC FUNCTIONS
--- Used by the frontend/backend for real-time stats and reports
+-- ACCOUNTING REPORTING RPCs (Updated)
 
 BEGIN;
 
@@ -13,7 +12,7 @@ RETURNS TABLE (
     total_debit DECIMAL(15, 2),
     total_credit DECIMAL(15, 2),
     balance DECIMAL(15, 2)
-) LANGUAGE plpgsql AS $$
+) AS $$
 BEGIN
     RETURN QUERY
     SELECT 
@@ -32,55 +31,58 @@ BEGIN
     GROUP BY a.id, a.code, a.name, a.type
     ORDER BY a.code;
 END;
-$$;
+$$ LANGUAGE plpgsql;
 
--- 2. Get Total Revenue (Current Month)
+-- 2. Get Total Revenue (Fee Income + Other Income)
 CREATE OR REPLACE FUNCTION get_total_revenue()
-RETURNS DECIMAL(15, 2) LANGUAGE plpgsql AS $$
+RETURNS DECIMAL(15, 2) AS $$
 DECLARE
     total_rev DECIMAL(15, 2);
 BEGIN
-    SELECT COALESCE(SUM(credit) - SUM(debit), 0) INTO total_rev
+    SELECT COALESCE(SUM(credit), 0) - COALESCE(SUM(debit), 0)
+    INTO total_rev
     FROM journal_entries je
     JOIN accounts a ON je.account_id = a.id
-    JOIN transactions t ON je.transaction_id = t.id
     WHERE a.type = 'income'
-    AND t.date >= date_trunc('month', CURRENT_DATE);
+    AND je.created_at >= date_trunc('month', CURRENT_DATE);
     
     RETURN total_rev;
 END;
-$$;
+$$ LANGUAGE plpgsql;
 
--- 3. Get Total Receivables
+-- 3. Get Total Receivables (Current Balance of Accounts Receivable)
 CREATE OR REPLACE FUNCTION get_total_receivables()
-RETURNS DECIMAL(15, 2) LANGUAGE plpgsql AS $$
+RETURNS DECIMAL(15, 2) AS $$
 DECLARE
     total_rec DECIMAL(15, 2);
 BEGIN
     -- Code 1200 is Accounts Receivable
-    SELECT COALESCE(SUM(debit) - SUM(credit), 0) INTO total_rec
+    SELECT COALESCE(SUM(debit), 0) - COALESCE(SUM(credit), 0)
+    INTO total_rec
     FROM journal_entries je
     JOIN accounts a ON je.account_id = a.id
     WHERE a.code = '1200';
     
     RETURN total_rec;
 END;
-$$;
+$$ LANGUAGE plpgsql;
 
--- 4. Get Cash/Bank Balance
+-- 4. Get Cash & Bank Balance
 CREATE OR REPLACE FUNCTION get_cash_balance()
-RETURNS DECIMAL(15, 2) LANGUAGE plpgsql AS $$
+RETURNS DECIMAL(15, 2) AS $$
 DECLARE
     total_cash DECIMAL(15, 2);
 BEGIN
-    -- Type 'asset' and code starting with 11 (Cash/Bank)
-    SELECT COALESCE(SUM(debit) - SUM(credit), 0) INTO total_cash
+    -- Asset accounts with code starting with 11 (Cash/Bank)
+    SELECT COALESCE(SUM(debit), 0) - COALESCE(SUM(credit), 0)
+    INTO total_cash
     FROM journal_entries je
     JOIN accounts a ON je.account_id = a.id
-    WHERE a.type = 'asset' AND a.code LIKE '11%';
+    WHERE a.type = 'asset' 
+    AND (a.code LIKE '11%' OR a.code = '1000');
     
     RETURN total_cash;
 END;
-$$;
+$$ LANGUAGE plpgsql;
 
 COMMIT;

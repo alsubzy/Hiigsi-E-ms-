@@ -46,7 +46,7 @@ CREATE TABLE IF NOT EXISTS transactions (
     date DATE NOT NULL DEFAULT CURRENT_DATE,
     description TEXT,
     reference_no TEXT, -- e.g. Invoice #, Receipt #
-    type TEXT NOT NULL, -- e.g. 'fee_assignment', 'payment', 'expense', 'manual'
+    type TEXT NOT NULL, -- e.g. 'fee_assignment', 'payment', 'expense', 'manual', 'other_income'
     academic_year_id UUID REFERENCES academic_years(id),
     created_by UUID REFERENCES auth.users(id),
     created_at TIMESTAMPTZ DEFAULT NOW()
@@ -92,10 +92,12 @@ CREATE TABLE IF NOT EXISTS student_fees (
     fee_structure_id UUID REFERENCES fee_structures(id),
     amount DECIMAL(15, 2) NOT NULL,
     discount_amount DECIMAL(15, 2) DEFAULT 0,
-    net_amount DECIMAL(15, 2) GENERATED ALWAYS AS (amount - discount_amount) STORED,
+    late_fee_amount DECIMAL(15, 2) DEFAULT 0,
+    net_amount DECIMAL(15, 2) GENERATED ALWAYS AS (amount - discount_amount + late_fee_amount) STORED,
     status TEXT DEFAULT 'pending' CHECK (status IN ('pending', 'partial', 'paid', 'cancelled')),
     academic_year_id UUID REFERENCES academic_years(id),
     term_id UUID REFERENCES terms(id),
+    discount_reason TEXT,
     created_at TIMESTAMPTZ DEFAULT NOW(),
     updated_at TIMESTAMPTZ DEFAULT NOW()
 );
@@ -148,7 +150,6 @@ CREATE TABLE IF NOT EXISTS accounting_payments (
     bank_account_id UUID REFERENCES bank_accounts(id),
     reference_no TEXT,
     notes TEXT,
-    created_by UUID REFERENCES auth.users(id),
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
@@ -167,11 +168,26 @@ CREATE TABLE IF NOT EXISTS expenses (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- 9. Other Income (Non-student revenue)
+CREATE TABLE IF NOT EXISTS other_incomes (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    income_no TEXT UNIQUE NOT NULL,
+    account_id UUID REFERENCES accounts(id), -- Income GL account
+    amount DECIMAL(15, 2) NOT NULL CHECK (amount > 0),
+    date DATE NOT NULL DEFAULT CURRENT_DATE,
+    source TEXT, -- e.g "Donation", "Registration Fee"
+    payment_method TEXT NOT NULL,
+    bank_account_id UUID REFERENCES bank_accounts(id),
+    description TEXT,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
 -- INDEXES
 CREATE INDEX idx_journal_entries_account ON journal_entries(account_id);
 CREATE INDEX idx_journal_entries_transaction ON journal_entries(transaction_id);
 CREATE INDEX idx_student_fees_student ON student_fees(student_id);
 CREATE INDEX idx_invoices_student ON invoices(student_id);
 CREATE INDEX idx_payments_invoice ON accounting_payments(invoice_id);
+CREATE INDEX idx_transactions_date ON transactions(date);
 
 COMMIT;
