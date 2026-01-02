@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+
 import { SubjectsClient } from "@/components/academic/subjects-client"
 import { getSubjects } from "@/app/actions/subjects"
 import { getClasses } from "@/app/actions/classes"
@@ -28,7 +28,7 @@ export default async function SubjectsPage() {
     ])
 
     return (
-        <DashboardLayout user={profile}>
+        <>
             <div className="flex-1 space-y-4 p-8 pt-6">
                 <SubjectsClient
                     initialSubjects={subjectsRes.data || []}
@@ -38,6 +38,6 @@ export default async function SubjectsPage() {
                     initialAllocations={[]}
                 />
             </div>
-        </DashboardLayout>
+        </>
     )
 }

@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
-import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+
 import { Header } from "@/components/dashboard/header"
 import { StudentsClient } from "@/components/students/students-client"
 import { getStudents } from "@/app/actions/students"
@@ -31,9 +31,9 @@ export default async function StudentsPage() {
   const students = await getStudents()
 
   return (
-    <DashboardLayout user={profile}>
+    <>
       <Header title="Students" description="Manage student information and records" />
       <StudentsClient students={students} userRole={profile.role} />
-    </DashboardLayout>
+    </>
   )
 }

@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+
 import { SyllabusClient } from "@/components/academic/syllabus-client"
 import { getSyllabus } from "@/app/actions/syllabus"
 import { getClasses } from "@/app/actions/classes"
@@ -26,7 +26,7 @@ export default async function SyllabusPage() {
     ])
 
     return (
-        <DashboardLayout user={profile}>
+        <>
             <div className="flex-1 space-y-4 p-8 pt-6">
                 <SyllabusClient
                     initialSyllabus={syllabusRes.data || []}
@@ -35,6 +35,6 @@ export default async function SyllabusPage() {
                     academicYears={yearsRes.data || []}
                 />
             </div>
-        </DashboardLayout>
+        </>
     )
 }

@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+
 import { ClassesClient } from "@/components/academic/classes-client"
 import { getClasses } from "@/app/actions/classes"
 
@@ -18,12 +18,12 @@ export default async function ClassesPage() {
     const { data: classes } = await getClasses()
 
     return (
-        <DashboardLayout user={profile}>
+        <>
             <div className="flex-1 space-y-4 p-8 pt-6">
                 <ClassesClient
                     initialClasses={classes || []}
                 />
             </div>
-        </DashboardLayout>
+        </>
     )
 }

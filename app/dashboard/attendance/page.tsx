@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
-import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+
 import { Header } from "@/components/dashboard/header"
 import { AttendanceClient } from "@/components/attendance/attendance-client"
 
@@ -28,9 +28,9 @@ export default async function AttendancePage() {
   }
 
   return (
-    <DashboardLayout user={profile}>
+    <>
       <Header title="Attendance" description="Mark and track student attendance" />
       <AttendanceClient userRole={profile.role} />
-    </DashboardLayout>
+    </>
   )
 }

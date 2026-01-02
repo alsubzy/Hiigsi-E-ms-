@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
-import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+
 import { ReportsClient } from "@/components/reports/reports-client"
 import {
   getOverallStats,
@@ -37,7 +37,7 @@ export default async function ReportsPage() {
   ])
 
   return (
-    <DashboardLayout user={profile}>
+    <>
       <ReportsClient
         overallStats={overallStatsResult.data}
         attendanceReport={attendanceResult}
@@ -45,6 +45,6 @@ export default async function ReportsPage() {
         financialReport={financialResult}
         teacherReport={teacherResult}
       />
-    </DashboardLayout>
+    </>
   )
 }

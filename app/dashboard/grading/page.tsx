@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
-import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+
 import { Header } from "@/components/dashboard/header"
 import { GradingClient } from "@/components/grading/grading-client"
 
@@ -28,9 +28,9 @@ export default async function GradingPage() {
   }
 
   return (
-    <DashboardLayout user={profile}>
+    <>
       <Header title="Grading & Report Cards" description="Enter grades and generate report cards" />
       <GradingClient userRole={profile.role} />
-    </DashboardLayout>
+    </>
   )
 }

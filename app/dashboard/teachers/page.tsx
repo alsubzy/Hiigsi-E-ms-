@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
-import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+
 import { TeachersClient } from "@/components/teachers/teachers-client"
 import { getTeachers, getTeacherAttendance } from "@/app/actions/teachers"
 
@@ -33,8 +33,8 @@ export default async function TeachersPage() {
   ])
 
   return (
-    <DashboardLayout user={profile}>
+    <>
       <TeachersClient initialTeachers={teachersResult.data || []} initialAttendance={attendanceResult.data || []} />
-    </DashboardLayout>
+    </>
   )
 }

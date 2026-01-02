@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation"
 import { createClient } from "@/lib/supabase/server"
-import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+
 import { SettingsClient } from "@/components/settings/settings-client"
 import { getSchoolSettings } from "@/app/actions/settings"
 
@@ -24,8 +24,8 @@ export default async function SettingsPage() {
   const schoolSettings = await getSchoolSettings()
 
   return (
-    <DashboardLayout user={profile}>
+    <>
       <SettingsClient user={profile} schoolSettings={schoolSettings.data} />
-    </DashboardLayout>
+    </>
   )
 }

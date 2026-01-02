@@ -1,6 +1,6 @@
 import { createClient } from "@/lib/supabase/server"
 import { redirect } from "next/navigation"
-import { DashboardLayout } from "@/components/dashboard/dashboard-layout"
+
 import { CalendarClient } from "@/components/academic/calendar-client"
 import { getAcademicYears, getTerms } from "@/app/actions/academic"
 
@@ -21,13 +21,13 @@ export default async function CalendarPage() {
     ])
 
     return (
-        <DashboardLayout user={profile}>
+        <>
             <div className="flex-1 space-y-4 p-8 pt-6">
                 <CalendarClient
                     years={yearsRes.data || []}
                     terms={termsRes.data || []}
                 />
             </div>
-        </DashboardLayout>
+        </>
     )
 }
