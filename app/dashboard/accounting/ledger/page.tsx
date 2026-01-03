@@ -53,11 +53,11 @@ export default function LedgerPage() {
     )
 
     return (
-        <div className="p-6 space-y-6">
-            <div className="flex justify-between items-center">
+        <div className="space-y-6">
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <h1 className="text-3xl font-black text-[#1E293B]">General Ledger</h1>
-                    <p className="text-muted-foreground font-medium">Detailed audit trail of all financial journal entries</p>
+                    <h2 className="text-xl font-bold tracking-tight text-gray-900">General Ledger</h2>
+                    <p className="text-sm text-gray-500 font-medium">Detailed audit trail of all financial transactions across accounts.</p>
                 </div>
                 <div className="flex gap-2">
                     <div className="relative">

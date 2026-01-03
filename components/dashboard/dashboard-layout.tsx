@@ -29,7 +29,7 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
       {/* Sidebar - Fixed on mobile, static on desktop */}
       <aside
         className={cn(
-          "fixed inset-y-0 left-0 z-50 w-64 transform bg-white dark:bg-zinc-900 border-r transition-transform duration-300 ease-in-out lg:static lg:translate-x-0",
+          "fixed inset-y-0 left-0 z-50 w-64 transform bg-white dark:bg-zinc-900 border-r transition-transform duration-300 ease-in-out lg:relative lg:translate-x-0",
           sidebarOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
@@ -52,8 +52,8 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
         </div>
 
         {/* Scrollable Content */}
-        <main className="flex-1 overflow-auto p-4 md:p-6 lg:p-8 scroll-smooth">
-          <div className="mx-auto max-w-7xl animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <main className="flex-1 overflow-auto scroll-smooth">
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
             {children}
           </div>
         </main>

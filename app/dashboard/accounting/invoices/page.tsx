@@ -65,19 +65,14 @@ export default function InvoicesListPage() {
     }
 
     return (
-        <div className="max-w-[1600px] mx-auto p-6 space-y-6">
+        <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <nav className="flex items-center text-sm text-gray-500 mb-1">
-                        <Link href="/dashboard/accounting" className="hover:text-primary transition-colors">Accounting</Link>
-                        <ChevronRight className="h-4 w-4 mx-1" />
-                        <span className="font-semibold text-gray-900">Invoices</span>
-                    </nav>
-                    <h1 className="text-2xl font-bold tracking-tight text-gray-900">Invoices Directory</h1>
-                    <p className="text-gray-500">View, manage, and print student invoices.</p>
+                    <h2 className="text-xl font-bold tracking-tight text-gray-900">Invoices Directory</h2>
+                    <p className="text-sm text-gray-500">View, manage, and print student invoices.</p>
                 </div>
                 <Link href="/dashboard/accounting/invoices/new">
-                    <Button className="font-semibold shadow-sm gap-2">
+                    <Button className="font-semibold shadow-sm gap-2 bg-blue-600 hover:bg-blue-700 text-white">
                         <Plus className="h-4 w-4" /> Create Invoice
                     </Button>
                 </Link>

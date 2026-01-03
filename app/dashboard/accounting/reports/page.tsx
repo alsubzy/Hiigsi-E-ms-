@@ -13,8 +13,10 @@ import { Printer, Download, TrendingUp, TrendingDown, Calculator } from "lucide-
 export default function ReportsPage() {
     const [trialBalance, setTrialBalance] = useState<any[]>([])
     const [isLoading, setIsLoading] = useState(true)
+    const [isMounted, setIsMounted] = useState(false)
 
     useEffect(() => {
+        setIsMounted(true)
         fetchData()
     }, [])
 
@@ -36,6 +38,8 @@ export default function ReportsPage() {
     const totalRevenue = incomeAccounts.reduce((sum, a) => sum + Number(a.balance), 0)
     const totalExpenses = expenseAccounts.reduce((sum, a) => sum + Number(a.balance), 0)
     const netIncome = totalRevenue - totalExpenses
+
+    if (!isMounted) return null
 
     return (
         <div className="p-6 space-y-6">
@@ -102,7 +106,7 @@ export default function ReportsPage() {
                                     </h4>
                                     <div className="space-y-2">
                                         {incomeAccounts.map(acc => (
-                                            <div key={acc.id} className="flex justify-between items-center py-2 px-4 hover:bg-gray-50 rounded-lg">
+                                            <div key={acc.account_code || acc.account_name} className="flex justify-between items-center py-2 px-4 hover:bg-gray-50 rounded-lg">
                                                 <span className="font-medium text-gray-600">{acc.account_name}</span>
                                                 <span className="font-black text-green-600">${Number(acc.balance).toLocaleString()}</span>
                                             </div>
@@ -120,7 +124,7 @@ export default function ReportsPage() {
                                     </h4>
                                     <div className="space-y-2">
                                         {expenseAccounts.map(acc => (
-                                            <div key={acc.id} className="flex justify-between items-center py-2 px-4 hover:bg-gray-50 rounded-lg">
+                                            <div key={acc.account_code || acc.account_name} className="flex justify-between items-center py-2 px-4 hover:bg-gray-50 rounded-lg">
                                                 <span className="font-medium text-gray-600">{acc.account_name}</span>
                                                 <span className="font-black text-red-600">${Number(acc.balance).toLocaleString()}</span>
                                             </div>
@@ -169,7 +173,7 @@ export default function ReportsPage() {
                                         </TableRow>
                                     ) : (
                                         trialBalance.map((acc) => (
-                                            <TableRow key={acc.id} className="border-gray-50">
+                                            <TableRow key={acc.account_code || acc.account_name} className="border-gray-50">
                                                 <TableCell className="pl-6 font-bold text-xs font-mono text-muted-foreground">{acc.account_code}</TableCell>
                                                 <TableCell className="font-bold">{acc.account_name}</TableCell>
                                                 <TableCell>

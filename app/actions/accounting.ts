@@ -243,14 +243,19 @@ export async function processPayment(data: {
 }) {
   const supabase = await createClient()
 
-  // 1. Get Invoice
+  // 1. Get Invoice & Verify Balance
   const { data: invoice } = await supabase
     .from("invoices")
-    .select("student_id, invoice_no, paid_amount, total_amount")
+    .select("student_id, invoice_no, paid_amount, total_amount, student_fees(fee_structures(account_id))") // Try to get fee account if possible, simplified for now
     .eq("id", data.invoice_id)
     .single()
 
   if (!invoice) throw new Error("Invoice not found")
+
+  const currentBalance = Number(invoice.total_amount) - Number(invoice.paid_amount)
+  if (data.amount > currentBalance) {
+    throw new Error(`Overpayment detected. Maximum payable amount is $${currentBalance.toLocaleString()}`)
+  }
 
   // 2. Create Payment Record
   const payment_no = `PAY-${Date.now()}`
@@ -280,9 +285,78 @@ export async function processPayment(data: {
     .update({ paid_amount: newPaidAmount, status: newStatus })
     .eq("id", data.invoice_id)
 
+  // 4. POST TO GENERAL LEDGER (Double Entry)
+  // Debit: Cash/Bank (Asset)
+  // Credit: Fees Income (Income)
+
+  // Fetch Accounts (Ideally these checks should be cached or configured)
+  const { data: accounts } = await supabase.from("accounts").select("id, name, type, code").in("name", ["Cash on Hand", "Tuition Fees Income"])
+
+  let debitAccount = accounts?.find(a => a.name === "Cash on Hand")
+  let creditAccount = accounts?.find(a => a.name === "Tuition Fees Income")
+
+  // Fallback: Use any Asset/Income if named ones missing, or skip GL if strictly no accounts
+  if (!debitAccount) {
+    // Try to find any asset
+    const { data: anyAsset } = await supabase.from("accounts").select("id").eq("type", "asset").limit(1).single()
+    if (anyAsset) debitAccount = anyAsset as any
+  }
+  if (!creditAccount) {
+    // Try to find any income
+    const { data: anyIncome } = await supabase.from("accounts").select("id").eq("type", "income").limit(1).single()
+    if (anyIncome) creditAccount = anyIncome as any
+  }
+
+  if (debitAccount && creditAccount) {
+    const journalLines: JournalEntryLine[] = [
+      { account_id: debitAccount.id, debit: data.amount, credit: 0, notes: `Payment ${payment_no} - ${data.payment_method}` },
+      { account_id: creditAccount.id, debit: 0, credit: data.amount, notes: `Fees Collected - ${invoice.invoice_no}` }
+    ]
+
+    try {
+      await postTransaction(
+        `Fee Payment: ${invoice.invoice_no}`,
+        "receipt",
+        journalLines,
+        payment_no,
+        data.payment_date
+      )
+    } catch (glError) {
+      console.error("GL Posting Failed (Non-fatal for payment):", glError)
+      // Ensure we don't block the user flow if GL fails, but log it.
+    }
+  }
+
+
   revalidatePath("/dashboard/accounting/payments")
   revalidatePath("/dashboard/accounting/invoices")
+  revalidatePath("/dashboard/accounting/collection") // Revalidate new collection page
   return payment
+}
+
+export async function getPaymentDetails(paymentId: string) {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("accounting_payments")
+    .select(`
+            *,
+            students (first_name, last_name, student_id, grade),
+            invoices (
+                invoice_no, 
+                invoice_items (
+                    amount,
+                    student_fees (
+                        fee_structures (name)
+                    )
+                )
+            ),
+            users_collected: collected_by (full_name) 
+        `) // Assuming 'collected_by' relates to profiles/users
+    .eq("id", paymentId)
+    .single()
+
+  if (error) return null // Handle specific errors if needed
+  return data
 }
 
 /**

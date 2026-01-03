@@ -80,11 +80,11 @@ export default function ExpensesPage() {
     }
 
     return (
-        <div className="p-6 space-y-6">
+        <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-black text-[#1E293B]">Expense Tracking</h1>
-                    <p className="text-muted-foreground whitespace-nowrap">Record and monitor school outflows and vendor payments</p>
+                    <h2 className="text-xl font-bold tracking-tight text-gray-900">Expense Tracking</h2>
+                    <p className="text-sm text-gray-500 font-medium whitespace-nowrap">Record and monitor school outflows and vendor payments</p>
                 </div>
                 <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
                     <DialogTrigger asChild>

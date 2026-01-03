@@ -50,11 +50,11 @@ export default function COAPage() {
     }, {})
 
     return (
-        <div className="p-6 space-y-6">
+        <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <div>
-                    <h1 className="text-3xl font-black text-[#1E293B]">Chart of Accounts</h1>
-                    <p className="text-muted-foreground font-medium">Standard school financial structure and GL account mapping</p>
+                    <h2 className="text-xl font-bold tracking-tight text-gray-900">Chart of Accounts</h2>
+                    <p className="text-sm text-gray-500 font-medium">Standard school financial structure and GL account mapping</p>
                 </div>
                 <div className="flex gap-2">
                     <Button className="font-bold gap-2 shadow-lg shadow-primary/20">
@@ -146,6 +146,6 @@ export default function COAPage() {
                     )}
                 </CardContent>
             </Card>
-        </div>
+        </div >
     )
 }

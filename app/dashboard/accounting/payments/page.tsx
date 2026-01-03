@@ -11,6 +11,7 @@ import { Search, Filter, Printer, Download, DollarSign, Plus, ChevronRight } fro
 import { format } from "date-fns"
 import { toast } from "sonner"
 import Link from "next/link"
+import { ReceiptDialog } from "@/components/dashboard/accounting/receipt-dialog"
 
 export default function PaymentsListPage() {
     const [payments, setPayments] = useState<any[]>([])
@@ -26,7 +27,7 @@ export default function PaymentsListPage() {
         try {
             const { data, error } = await supabase
                 .from("accounting_payments")
-                .select("*, students(first_name, last_name, full_name), invoices(invoice_no)")
+                .select("*, students(first_name, last_name), invoices(invoice_no)")
                 .order("payment_date", { ascending: false })
 
             if (error) throw error
@@ -66,16 +67,11 @@ export default function PaymentsListPage() {
     }
 
     return (
-        <div className="max-w-[1600px] mx-auto p-6 space-y-6">
+        <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <nav className="flex items-center text-sm text-gray-500 mb-1">
-                        <Link href="/dashboard/accounting" className="hover:text-primary transition-colors">Accounting</Link>
-                        <ChevronRight className="h-4 w-4 mx-1" />
-                        <span className="font-semibold text-gray-900">Payments</span>
-                    </nav>
-                    <h1 className="text-2xl font-bold tracking-tight text-gray-900">Payments & Receipts</h1>
-                    <p className="text-gray-500">Track and manage student fee payments.</p>
+                    <h2 className="text-xl font-bold tracking-tight text-gray-900">Payments & Receipts</h2>
+                    <p className="text-sm text-gray-500 font-medium">History of all transactions and printable receipts.</p>
                 </div>
                 <div className="flex gap-2">
                     <Link href="/dashboard/accounting/payments/new">
@@ -167,9 +163,14 @@ export default function PaymentsListPage() {
                                             +${Number(pay.amount).toLocaleString()}
                                         </TableCell>
                                         <TableCell>
-                                            <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-gray-900">
-                                                <Printer className="h-4 w-4" />
-                                            </Button>
+                                            <ReceiptDialog
+                                                paymentId={pay.id}
+                                                trigger={
+                                                    <Button variant="ghost" size="icon" className="h-8 w-8 text-gray-400 hover:text-gray-900">
+                                                        <Printer className="h-4 w-4" />
+                                                    </Button>
+                                                }
+                                            />
                                         </TableCell>
                                     </TableRow>
                                 ))

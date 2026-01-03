@@ -49,16 +49,11 @@ export default function FeesPage() {
     )
 
     return (
-        <div className="max-w-[1600px] mx-auto p-6 space-y-6">
+        <div className="space-y-6">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
-                    <nav className="flex items-center text-sm text-gray-500 mb-1">
-                        <Link href="/dashboard/accounting" className="hover:text-primary transition-colors">Accounting</Link>
-                        <ChevronRight className="h-4 w-4 mx-1" />
-                        <span className="font-semibold text-gray-900">Fees</span>
-                    </nav>
-                    <h1 className="text-2xl font-bold tracking-tight text-gray-900">Student Fees</h1>
-                    <p className="text-gray-500">Overview of all student fee assignments and balances.</p>
+                    <h2 className="text-xl font-bold tracking-tight text-gray-900">Student Fees Assignments</h2>
+                    <p className="text-sm text-gray-500 font-medium">Overview of all student fee assignments and balances.</p>
                 </div>
                 <div className="flex gap-2">
                     <Button variant="outline" className="font-semibold gap-2 border-gray-200">

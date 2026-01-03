@@ -57,10 +57,10 @@ export function ReportsClient({
       <Header title="Reports & Analytics" description="Comprehensive reports and data insights" />
       <div className="p-6 space-y-4">
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-          {stats.map((stat) => {
+          {stats.map((stat, i) => {
             const Icon = stat.icon
             return (
-              <Card key={stat.title}>
+              <Card key={stat.title || i}>
                 <CardHeader className="flex flex-row items-center justify-between pb-2">
                   <CardTitle className="text-sm font-medium text-muted-foreground">{stat.title}</CardTitle>
                   <Icon className={cn("h-4 w-4", stat.color)} />
@@ -194,8 +194,8 @@ export function ReportsClient({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {attendanceReport.data?.slice(0, 10).map((record: any) => (
-                    <TableRow key={record.id}>
+                  {attendanceReport.data?.slice(0, 10).map((record: any, index: number) => (
+                    <TableRow key={record.id || index}>
                       <TableCell>{new Date(record.date).toLocaleDateString()}</TableCell>
                       <TableCell>{record.student?.name}</TableCell>
                       <TableCell>
@@ -240,8 +240,8 @@ export function ReportsClient({
                       <p className="text-sm text-muted-foreground">Grade Distribution</p>
                       <div className="text-sm mt-2">
                         {gradingReport.stats?.gradeDistribution &&
-                          Object.entries(gradingReport.stats.gradeDistribution).map(([grade, count]: [string, any]) => (
-                            <div key={grade} className="flex justify-between">
+                          Object.entries(gradingReport.stats.gradeDistribution).map(([grade, count]: [string, any], i) => (
+                            <div key={`grade-${grade}-${i}`} className="flex justify-between">
                               <span>{grade}:</span>
                               <span className="font-semibold">{count}</span>
                             </div>
@@ -297,8 +297,8 @@ export function ReportsClient({
                   </CardHeader>
                   <CardContent>
                     {financialReport.stats?.revenueByMethod &&
-                      Object.entries(financialReport.stats.revenueByMethod).map(([method, amount]: [string, any]) => (
-                        <div key={method} className="flex justify-between items-center mb-2">
+                      Object.entries(financialReport.stats.revenueByMethod).map(([method, amount]: [string, any], i) => (
+                        <div key={`method-${method}-${i}`} className="flex justify-between items-center mb-2">
                           <span className="text-sm capitalize">{method.replace("_", " ")}</span>
                           <span className="font-semibold">${amount.toLocaleString()}</span>
                         </div>
@@ -312,8 +312,8 @@ export function ReportsClient({
                   </CardHeader>
                   <CardContent>
                     {financialReport.stats?.revenueByFeeType &&
-                      Object.entries(financialReport.stats.revenueByFeeType).map(([type, amount]: [string, any]) => (
-                        <div key={type} className="flex justify-between items-center mb-2">
+                      Object.entries(financialReport.stats.revenueByFeeType).map(([type, amount]: [string, any], i) => (
+                        <div key={`type-${type}-${i}`} className="flex justify-between items-center mb-2">
                           <span className="text-sm capitalize">{type.replace("_", " ")}</span>
                           <span className="font-semibold">${amount.toLocaleString()}</span>
                         </div>
