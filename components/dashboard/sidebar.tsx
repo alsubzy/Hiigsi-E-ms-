@@ -10,18 +10,12 @@ import {
   GraduationCap,
   DollarSign,
   LogOut,
-  School,
   BookOpen,
-  UserCheck,
   BarChart3,
   Settings,
   Shield,
-  Calendar as CalendarIcon,
-  Clock,
-  FileText,
-  FolderTree,
-  Receipt,
-  ChevronDown,
+  Briefcase,
+  ChevronRight,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -29,19 +23,17 @@ import { createClient } from "@/lib/supabase/client"
 import { toast } from "sonner"
 import type { Profile } from "@/lib/types"
 import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion"
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible"
 import { useEffect, useState } from "react"
-import { useLanguage } from "@/components/language-provider"
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 
 interface SidebarProps {
   user: Profile
   onClose?: () => void
 }
-
 
 interface NavSubItem {
   title: string
@@ -79,7 +71,7 @@ const navGroups: NavGroup[] = [
     icon: BookOpen,
     roles: ["admin", "teacher"],
     subItems: [
-      { title: "Academic Calendar", href: "/dashboard/academic/calendar", roles: ["admin"] },
+      { title: "Calendar", href: "/dashboard/academic/calendar", roles: ["admin"] },
       { title: "Classes", href: "/dashboard/academic/classes", roles: ["admin"] },
       { title: "Subjects", href: "/dashboard/academic/subjects", roles: ["admin"] },
       { title: "Timetable", href: "/dashboard/academic/timetable", roles: ["admin", "teacher"] },
@@ -91,29 +83,23 @@ const navGroups: NavGroup[] = [
     icon: GraduationCap,
     roles: ["admin", "teacher", "staff"],
     subItems: [
-      { title: "Student Directory", href: "/dashboard/students", roles: ["admin", "teacher", "staff"] },
+      { title: "All Students", href: "/dashboard/students", roles: ["admin", "teacher", "staff"] },
       { title: "Attendance", href: "/dashboard/attendance", roles: ["admin", "teacher", "staff"] },
-      { title: "Grading & Exams", href: "/dashboard/grading", roles: ["admin", "teacher"] },
+      { title: "Grades & Exams", href: "/dashboard/grading", roles: ["admin", "teacher"] },
     ],
   },
   {
-    title: "Accounting",
+    title: "Finance",
     icon: DollarSign,
     roles: ["admin", "accountant", "teacher", "staff"],
     subItems: [
       { title: "Overview", href: "/dashboard/accounting", roles: ["admin", "accountant", "teacher", "staff"] },
-      { title: "Chart of Accounts", href: "/dashboard/accounting/coa", roles: ["admin", "accountant", "teacher", "staff"] },
-      { title: "Student Fees", href: "/dashboard/accounting/fees", roles: ["admin", "accountant", "teacher", "staff"] },
+      { title: "Fees", href: "/dashboard/accounting/fees", roles: ["admin", "accountant", "teacher", "staff"] },
       { title: "Invoices", href: "/dashboard/accounting/invoices", roles: ["admin", "accountant", "teacher", "staff"] },
       { title: "Payments", href: "/dashboard/accounting/payments", roles: ["admin", "accountant", "teacher", "staff"] },
       { title: "Expenses", href: "/dashboard/accounting/expenses", roles: ["admin", "accountant", "teacher", "staff"] },
-      { title: "Other Income", href: "/dashboard/accounting/income", roles: ["admin", "accountant", "teacher", "staff"] },
-      { title: "General Ledger", href: "/dashboard/accounting/ledger", roles: ["admin", "accountant", "teacher", "staff"] },
-      { title: "Financial Reports", href: "/dashboard/accounting/reports", roles: ["admin", "accountant", "teacher", "staff"] },
-      { title: "Audit Logs", href: "/dashboard/accounting/audit", roles: ["admin", "accountant", "teacher", "staff"] },
     ],
   },
-
   {
     title: "Reports",
     href: "/dashboard/reports",
@@ -143,122 +129,132 @@ export function Sidebar({ user, onClose }: SidebarProps) {
     }
   }, [pathname])
 
+  const toggleGroup = (title: string) => {
+    setOpenGroups(prev =>
+      prev.includes(title)
+        ? prev.filter(t => t !== title)
+        : [...prev, title]
+    )
+  }
+
   const handleLogout = async () => {
     const supabase = createClient()
     await supabase.auth.signOut()
-    toast.success("Successfully logged out.")
+    toast.success("Logged out successfully")
     router.push("/login")
     router.refresh()
   }
 
-  const renderNavGroup = (group: NavGroup) => {
-    const Icon = group.icon
-    const hasSubItems = group.subItems && group.subItems.length > 0
-    const isUserAuthorized = group.roles.includes(user.role)
+  return (
+    <div className="flex h-full flex-col bg-white dark:bg-zinc-950 border-r border-zinc-100 dark:border-zinc-800">
+      {/* Brand Header */}
+      <div className="h-16 flex items-center gap-3 px-6 border-b border-zinc-100 dark:border-zinc-800">
+        <img src="/hiigsi-logo.jpg" alt="Hiigsi Skills" className="h-10 w-10 object-contain rounded-md" />
+        <div className="flex flex-col">
+          <h1 className="font-bold text-base text-zinc-900 dark:text-zinc-100 leading-none">Hiigsi Skills</h1>
+          <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wide mt-0.5">MANAGEMENT SYSTEM</p>
+        </div>
+      </div>
 
-    if (!isUserAuthorized) return null
+      {/* Navigation */}
+      <div className="flex-1 overflow-y-auto py-6 px-3 space-y-1 scrollbar-none">
+        {navGroups.map((group) => {
+          if (!group.roles.includes(user.role)) return null
 
-    if (!hasSubItems && group.href) {
-      const isActive = pathname === group.href
-      return (
-        <Link
-          key={group.title}
-          href={group.href}
-          onClick={() => onClose?.()}
-          className={cn(
-            "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all group",
-            isActive
-              ? "bg-primary text-primary-foreground shadow-sm shadow-primary/20"
-              : "text-muted-foreground hover:bg-muted hover:text-foreground"
-          )}
-        >
-          <Icon className={cn("h-4 w-4 transition-transform group-hover:scale-110", isActive ? "text-white" : "text-muted-foreground group-hover:text-primary")} />
-          {group.title}
-        </Link>
-      )
-    }
+          // Direct Link Item
+          if (!group.subItems && group.href) {
+            const isActive = pathname === group.href
+            const Icon = group.icon
 
-    return (
-      <AccordionItem value={group.title} key={group.title} className="border-none">
-        <AccordionTrigger
-          className={cn(
-            "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-all hover:bg-muted hover:no-underline group",
-            group.subItems?.some(sub => pathname.startsWith(sub.href)) ? "text-primary" : "text-muted-foreground"
-          )}
-        >
-          <div className="flex items-center gap-3">
-            <Icon className={cn("h-4 w-4 transition-transform group-hover:scale-110", group.subItems?.some(sub => pathname.startsWith(sub.href)) ? "text-primary" : "text-muted-foreground")} />
-            <span>{group.title}</span>
-          </div>
-        </AccordionTrigger>
-        <AccordionContent className="pt-1 pb-2 pl-9 space-y-1">
-          {group.subItems?.map((sub) => {
-            if (!sub.roles.includes(user.role)) return null
-            const isSubActive = pathname === sub.href
             return (
               <Link
-                key={sub.href}
-                href={sub.href}
-                onClick={() => onClose?.()}
+                key={group.title}
+                href={group.href}
+                onClick={onClose}
                 className={cn(
-                  "block px-3 py-2 text-xs font-medium rounded-md transition-all border-l",
-                  isSubActive
-                    ? "text-primary border-primary bg-primary/5"
-                    : "text-muted-foreground border-transparent hover:text-foreground hover:border-gray-200"
+                  "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
+                  isActive
+                    ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
+                    : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-zinc-100"
                 )}
               >
-                {sub.title}
+                <Icon className={cn("h-5 w-5", isActive ? "text-white" : "text-zinc-500 dark:text-zinc-500 group-hover:text-zinc-900")} />
+                {group.title}
               </Link>
             )
-          })}
-        </AccordionContent>
-      </AccordionItem>
-    )
-  }
+          }
 
-  return (
-    <div className="flex h-full w-64 flex-col border-r bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-16 items-center gap-3 border-b px-6">
-        <div className="flex h-10 w-10 items-center justify-center rounded-lg overflow-hidden bg-white">
-          <img src="/hiigsi-logo.jpg" alt="Hiigsi Skills" className="h-full w-full object-contain" />
-        </div>
-        <div className="flex flex-col">
-          <span className="text-sm font-bold tracking-tight">Hiigsi Skills</span>
-          <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter">Management System</span>
-        </div>
+          // Group with Sub-items
+          const isOpen = openGroups.includes(group.title)
+          const isActiveGroup = group.subItems?.some(sub => pathname.startsWith(sub.href))
+          const Icon = group.icon
+
+          return (
+            <Collapsible
+              key={group.title}
+              open={isOpen}
+              onOpenChange={() => toggleGroup(group.title)}
+              className="space-y-1"
+            >
+              <CollapsibleTrigger
+                className={cn(
+                  "flex w-full items-center justify-between px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group",
+                  isActiveGroup
+                    ? "text-blue-600 bg-blue-50 dark:bg-blue-900/10"
+                    : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-zinc-100"
+                )}
+              >
+                <div className="flex items-center gap-3">
+                  <Icon className={cn("h-5 w-5", isActiveGroup ? "text-blue-600" : "text-zinc-500")} />
+                  {group.title}
+                </div>
+                <ChevronRight className={cn("h-4 w-4 text-zinc-400 transition-transform duration-200", isOpen && "rotate-90")} />
+              </CollapsibleTrigger>
+              <CollapsibleContent className="space-y-1 pt-1 pb-2">
+                {group.subItems?.map((sub) => {
+                  if (!sub.roles.includes(user.role)) return null
+                  const isSubActive = pathname === sub.href
+                  return (
+                    <Link
+                      key={sub.href}
+                      href={sub.href}
+                      onClick={onClose}
+                      className={cn(
+                        "flex items-center h-9 pl-11 pr-3 rounded-lg text-sm transition-colors",
+                        isSubActive
+                          ? "text-blue-600 bg-blue-50/50 dark:bg-blue-900/10 font-medium"
+                          : "text-zinc-500 dark:text-zinc-400 hover:text-zinc-900 dark:hover:text-zinc-100 hover:bg-zinc-50/50 dark:hover:bg-zinc-900"
+                      )}
+                    >
+                      {sub.title}
+                    </Link>
+                  )
+                })}
+              </CollapsibleContent>
+            </Collapsible>
+          )
+        })}
       </div>
 
-      <div className="flex-1 overflow-auto py-6">
-        <div className="px-4 mb-4">
-          <p className="text-[10px] font-bold text-muted-foreground/50 uppercase tracking-[0.2em] mb-4 pl-2">Main Menu</p>
-          <Accordion
-            type="multiple"
-            value={openGroups}
-            onValueChange={setOpenGroups}
-            className="space-y-1"
-          >
-            {navGroups.map(renderNavGroup)}
-          </Accordion>
-        </div>
-      </div>
-
-      <div className="border-t p-4 bg-muted/20">
-        <div className="mb-4 flex items-center gap-3 px-2">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary border border-primary/20 font-bold shadow-sm">
-            {user.full_name.charAt(0).toUpperCase()}
-          </div>
+      {/* User Footer */}
+      <div className="p-4 border-t border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
+        <div className="flex items-center gap-3 mb-3">
+          <Avatar className="h-10 w-10 border-2 border-white dark:border-zinc-800 shadow-sm">
+            <AvatarImage src={`https://avatar.vercel.sh/${user.email}`} />
+            <AvatarFallback>{user.full_name.charAt(0).toUpperCase()}</AvatarFallback>
+          </Avatar>
           <div className="flex-1 overflow-hidden">
-            <p className="text-sm font-bold text-foreground truncate">{user.full_name}</p>
-            <p className="text-[10px] text-muted-foreground font-semibold capitalize bg-muted/50 w-fit px-1.5 rounded mt-0.5">{user.role}</p>
+            <p className="font-semibold text-sm truncate text-zinc-900 dark:text-zinc-100">{user.full_name}</p>
+            <p className="text-xs text-zinc-500 truncate capitalize">{user.role}</p>
           </div>
         </div>
         <Button
-          variant="outline"
-          className="w-full h-10 bg-white hover:bg-red-50 hover:text-red-600 hover:border-red-100 transition-all group"
+          variant="ghost"
           onClick={handleLogout}
+          className="w-full justify-start text-zinc-500 hover:text-red-600 hover:bg-red-50 dark:hover:bg-red-900/10 h-9 px-2"
         >
-          <LogOut className="mr-2 h-4 w-4 transition-transform group-hover:-translate-x-1" />
-          <span className="font-bold text-xs uppercase tracking-wider">Logout</span>
+          <LogOut className="mr-2 h-4 w-4" />
+          Sign Out
         </Button>
       </div>
     </div>
