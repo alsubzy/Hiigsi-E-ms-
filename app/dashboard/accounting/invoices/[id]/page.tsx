@@ -241,20 +241,42 @@ export default function InvoiceDetailPage() {
 
             <style jsx global>{`
         @media print {
-          body * {
-            visibility: hidden;
-          }
-          .print-area, .print-area * {
-            visibility: visible;
+          body {
+            background: white !important;
+            padding: 0 !important;
+            margin: 0 !important;
           }
           .print-area {
-            position: absolute;
-            left: 0;
-            top: 0;
-            width: 100%;
+            display: block !important;
+            width: 100% !important;
+            max-width: none !important;
           }
-           aside, nav, header, button {
+          /* Hide non-printable elements */
+          nav, aside, header, .print\:hidden, button {
             display: none !important;
+            height: 0 !important;
+            width: 0 !important;
+            margin: 0 !important;
+            padding: 0 !important;
+          }
+          /* Fix layout for print */
+          .max-w-5xl {
+            max-width: none !important;
+            margin: 0 !important;
+            width: 100% !important;
+          }
+          .shadow-2xl {
+            box-shadow: none !important;
+          }
+          .border-none {
+            border: 1px solid #e2e8f0 !important;
+          }
+          .rounded-3xl, .rounded-2xl {
+            border-radius: 0 !important;
+          }
+          /* Grid adjustments for print */
+          .grid {
+            display: grid !important;
           }
         }
       `}</style>

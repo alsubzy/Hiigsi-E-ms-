@@ -213,73 +213,35 @@ export async function getFeeCategories() {
   const supabase = await createClient()
   const { data, error } = await supabase.from("fee_categories").select("*, accounts(*)")
   if (error) throw new Error(error.message)
-
-  // Auto-populate defaults if empty
-  if (data.length === 0) {
-    const defaults = [
-      { name: "Tuition", description: "Standard tuition fees" },
-      { name: "Transport", description: "Bussing and transport" },
-      { name: "Registration", description: "One-time enrollment fee" }
-    ]
-    const { data: created, error: createError } = await supabase.from("fee_categories").insert(defaults).select()
-    if (createError) throw new Error(createError.message)
-    return created
-  }
-
-  return data
+  return data || []
 }
 
 export async function getAcademicYears() {
   const supabase = await createClient()
   const { data, error } = await supabase.from("academic_years").select("*").order("name", { ascending: false })
   if (error) throw new Error(error.message)
-
-  // Auto-populate defaults if empty
-  if (data.length === 0) {
-    const currentYear = {
-      name: "2025-2026",
-      start_date: "2025-01-01",
-      end_date: "2025-12-31",
-      is_current: true,
-      status: "active"
-    }
-    const { data: created, error: createError } = await supabase.from("academic_years").insert(currentYear).select().single()
-    if (createError) throw new Error(createError.message)
-    return [created]
-  }
-
-  return data
+  return data || []
 }
 
 export async function getTerms(academicYearId?: string) {
   const supabase = await createClient()
 
-  // If no year ID provided, try to get current year first
   let yearId = academicYearId
   if (!yearId) {
-    const { data: currentYear } = await supabase.from("academic_years").select("id").eq("is_current", true).single()
+    const { data: currentYear } = await supabase.from("academic_years").select("id").eq("is_current", true).maybeSingle()
     yearId = currentYear?.id
   }
 
   if (!yearId) return []
 
-  let query = supabase.from("terms").select("*").eq("academic_year_id", yearId)
-  const { data, error } = await query.order("name", { ascending: true })
+  const { data, error } = await supabase
+    .from("terms")
+    .select("*")
+    .eq("academic_year_id", yearId)
+    .order("name", { ascending: true })
+
   if (error) throw new Error(error.message)
-
-  // Auto-populate defaults if empty
-  if (data.length === 0) {
-    const defaults = [
-      { academic_year_id: yearId, name: "Term 1", start_date: "2025-01-01", end_date: "2025-04-30", is_current: true },
-      { academic_year_id: yearId, name: "Term 2", start_date: "2025-05-01", end_date: "2025-08-30", is_current: false },
-      { academic_year_id: yearId, name: "Term 3", start_date: "2025-09-01", end_date: "2025-12-31", is_current: false }
-    ]
-    const { data: created, error: createError } = await supabase.from("terms").insert(defaults).select()
-    if (createError) throw new Error(createError.message)
-    return created
-  }
-
-  return data
+  return data || []
 }
 
 export async function getFeeStructures() {
@@ -346,9 +308,85 @@ export async function getStudentFees(studentId?: string) {
   const supabase = await createClient()
   let query = supabase.from("student_fees").select("*, fee_structures(*, fee_categories(*)), students(*)")
   if (studentId) query = query.eq("student_id", studentId)
-  const { data, error } = await query
+  const { data, error } = await query.order("created_at", { ascending: false })
   if (error) throw new Error(error.message)
   return data
+}
+
+export async function assignFeesToStudents(data: {
+  studentIds: string[]
+  feeStructureId: string
+  discount_amount?: number
+  discount_reason?: string
+}) {
+  const supabase = await createClient()
+
+  // 1. Get Fee Structure Details
+  const { data: fs, error: fsError } = await supabase
+    .from("fee_structures")
+    .select("*")
+    .eq("id", data.feeStructureId)
+    .single()
+
+  if (fsError) throw new Error(fsError.message)
+
+  // 2. Prepare Assignments
+  const assignments = data.studentIds.map(stId => ({
+    student_id: stId,
+    fee_structure_id: data.feeStructureId,
+    amount: fs.amount,
+    academic_year_id: fs.academic_year_id,
+    term_id: fs.term_id,
+    discount_amount: data.discount_amount || 0,
+    discount_reason: data.discount_reason || "",
+    status: 'pending'
+  }))
+
+  // 3. Insert (using upsert or just insert - let's use insert but we might want to check for duplicates in UI)
+  // To avoid duplicates, we can use a unique constraint in DB (which exists: student_id, fee_structure_id)
+  // But our schema only has Category/Year/Grade/Term unique.
+  // Actually, we should probably add a unique constraint on (student_id, fee_structure_id) in DB or check here.
+
+  const { error } = await supabase.from("student_fees").insert(assignments)
+  if (error) {
+    if (error.code === '23505') throw new Error("Some students already have this fee assigned.")
+    throw new Error(error.message)
+  }
+
+  revalidatePath("/dashboard/accounting/fees")
+}
+
+export async function updateStudentFee(id: string, data: {
+  discount_amount?: number
+  late_fee_amount?: number
+  discount_reason?: string
+  status?: string
+}) {
+  const supabase = await createClient()
+  const { error } = await supabase.from("student_fees").update(data).eq("id", id)
+  if (error) throw new Error(error.message)
+  revalidatePath("/dashboard/accounting/fees")
+}
+
+export async function deleteStudentFee(id: string) {
+  const supabase = await createClient()
+
+  // 1. Check if linked to invoice
+  const { count, error: countError } = await supabase
+    .from("invoice_items")
+    .select("*", { count: 'exact', head: true })
+    .eq("student_fee_id", id)
+
+  if (countError) throw new Error(countError.message)
+  if (count && count > 0) {
+    throw new Error("Cannot delete fee that is already linked to an invoice.")
+  }
+
+  // 2. Delete
+  const { error } = await supabase.from("student_fees").delete().eq("id", id)
+  if (error) throw new Error(error.message)
+
+  revalidatePath("/dashboard/accounting/fees")
 }
 
 /**
@@ -381,8 +419,10 @@ export async function createInvoice(data: {
       invoice_no,
       student_id: data.student_id,
       total_amount: totalAmount,
+      balance_amount: totalAmount, // Initial balance is total
       due_date: data.due_date,
       notes: data.notes,
+      status: "unpaid"
     })
     .select()
     .single()
@@ -398,8 +438,46 @@ export async function createInvoice(data: {
 
   await supabase.from("invoice_items").insert(invoiceItems)
 
+  // 4. Update fees to 'partial' or 'invoiced' if we had such status, 
+  // currently we just link them.
+
   revalidatePath("/dashboard/accounting/invoices")
   return invoice
+}
+
+export async function updateInvoice(id: string, data: {
+  due_date?: string
+  notes?: string
+  status?: string
+}) {
+  const supabase = await createClient()
+  const { error } = await supabase.from("invoices").update(data).eq("id", id)
+  if (error) throw new Error(error.message)
+  revalidatePath("/dashboard/accounting/invoices")
+}
+
+export async function deleteInvoice(id: string) {
+  const supabase = await createClient()
+
+  // 1. Check for payments
+  const { count, error: countError } = await supabase
+    .from("accounting_payments")
+    .select("*", { count: 'exact', head: true })
+    .eq("invoice_id", id)
+
+  if (countError) throw new Error(countError.message)
+  if (count && count > 0) {
+    throw new Error("Cannot delete invoice with existing payments. Cancel it instead.")
+  }
+
+  // 2. Delete items (should be cascade, but let's be safe if not)
+  await supabase.from("invoice_items").delete().eq("invoice_id", id)
+
+  // 3. Delete invoice
+  const { error } = await supabase.from("invoices").delete().eq("id", id)
+  if (error) throw new Error(error.message)
+
+  revalidatePath("/dashboard/accounting/invoices")
 }
 
 export async function processPayment(data: {
