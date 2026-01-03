@@ -46,7 +46,7 @@ export default function FeesPage() {
     // Filters
     const [searchTerm, setSearchTerm] = useState("")
     const [categoryFilter, setCategoryFilter] = useState("all")
-    const [gradeFilter, setGradeFilter] = useState("all")
+    const [classFilter, setClassFilter] = useState("all")
     const [statusFilter, setStatusFilter] = useState("all")
 
     // Actions state
@@ -136,18 +136,18 @@ export default function FeesPage() {
         const matchesSearch = f.students?.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
             f.fee_structures?.fee_categories?.name?.toLowerCase().includes(searchTerm.toLowerCase())
         const matchesCategory = categoryFilter === "all" || f.fee_structures?.fee_category_id === categoryFilter
-        const matchesGrade = gradeFilter === "all" || f.students?.grade === gradeFilter
+        const matchesClass = classFilter === "all" || f.students?.class_name === classFilter
         const matchesStatus = statusFilter === "all" || f.status === statusFilter
-        return matchesSearch && matchesCategory && matchesGrade && matchesStatus
+        return matchesSearch && matchesCategory && matchesClass && matchesStatus
     })
 
     const exportToCSV = () => {
-        const headers = ["Student", "Grade", "Category", "Base", "Discount", "Late Fee", "Net", "Status"]
+        const headers = ["Student", "Class", "Category", "Base", "Discount", "Late Fee", "Net", "Status"]
         const csvContent = [
             headers.join(","),
             ...filteredFees.map(f => [
                 f.students?.full_name,
-                f.students?.grade,
+                f.students?.class_name,
                 f.fee_structures?.fee_categories?.name,
                 f.amount,
                 f.discount_amount,
@@ -168,7 +168,7 @@ export default function FeesPage() {
         document.body.removeChild(link)
     }
 
-    const allGrades = Array.from(new Set(fees.map(f => f.students?.grade).filter(Boolean))).sort()
+    const allClasses = Array.from(new Set(fees.map(f => f.students?.class_name).filter(Boolean))).sort()
 
     return (
         <div className="space-y-6">
@@ -236,14 +236,14 @@ export default function FeesPage() {
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
                         <div className="flex items-center gap-2">
-                            <span className="text-xs font-black uppercase text-gray-400">Grade</span>
+                            <span className="text-xs font-black uppercase text-gray-400">Class</span>
                             <select
                                 className="bg-white border border-gray-200 rounded-lg px-3 py-1.5 text-xs font-bold focus:ring-2 focus:ring-blue-500/20 outline-none"
-                                value={gradeFilter}
-                                onChange={e => setGradeFilter(e.target.value)}
+                                value={classFilter}
+                                onChange={e => setClassFilter(e.target.value)}
                             >
-                                <option value="all">All Grades</option>
-                                {allGrades.map(g => <option key={g} value={g}>Grade {g}</option>)}
+                                <option value="all">All Classes</option>
+                                {allClasses.map(g => <option key={g} value={g}>Class {g}</option>)}
                             </select>
                         </div>
                         <div className="flex items-center gap-2">
@@ -304,7 +304,7 @@ export default function FeesPage() {
                                             <TableCell>
                                                 <div className="flex flex-col">
                                                     <span className="font-bold text-gray-900">{fee.students?.full_name}</span>
-                                                    <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest leading-none mt-1">Grade {fee.students?.grade}</span>
+                                                    <span className="text-[10px] font-black uppercase text-gray-400 tracking-widest leading-none mt-1">Class {fee.students?.class_name}</span>
                                                 </div>
                                             </TableCell>
                                             <TableCell className="text-center">

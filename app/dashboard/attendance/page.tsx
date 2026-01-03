@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 
 import { Header } from "@/components/dashboard/header"
 import { AttendanceClient } from "@/components/attendance/attendance-client"
+import { getClasses } from "@/app/actions/classes"
 
 export default async function AttendancePage() {
   const supabase = await createClient()
@@ -27,10 +28,13 @@ export default async function AttendancePage() {
     redirect("/dashboard")
   }
 
+  // Fetch classes
+  const classesRes = await getClasses()
+
   return (
     <>
       <Header title="Attendance" description="Mark and track student attendance" />
-      <AttendanceClient userRole={profile.role} />
+      <AttendanceClient userRole={profile.role} initialClasses={classesRes.data || []} />
     </>
   )
 }

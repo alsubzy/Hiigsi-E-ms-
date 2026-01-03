@@ -216,7 +216,7 @@ export function SubjectsClient({ initialSubjects, classes, teachers, academicYea
                                 <CardContent>
                                     <div className="text-xs font-mono bg-muted p-1 rounded inline-block mb-2">{subject.code}</div>
                                     <p className="text-sm text-muted-foreground">
-                                        {subject.class ? `Grade Level: ${subject.class.name}` : "General Subject"}
+                                        {subject.class ? `Class Level: ${subject.class.name}` : "General Subject"}
                                     </p>
                                 </CardContent>
                             </Card>
@@ -233,10 +233,10 @@ export function SubjectsClient({ initialSubjects, classes, teachers, academicYea
                         <CardContent className="space-y-4">
                             <div className="flex flex-col md:flex-row gap-4 p-4 border rounded-md bg-muted/20">
                                 <div className="grid gap-2 flex-1">
-                                    <Label>Grade Level</Label>
+                                    <Label>Class Level</Label>
                                     <Select value={allocationClassId} onValueChange={setAllocationClassId}>
                                         <SelectTrigger>
-                                            <SelectValue placeholder="Select Grade" />
+                                            <SelectValue placeholder="Select Class" />
                                         </SelectTrigger>
                                         <SelectContent>
                                             {classes.map(c => (
@@ -321,19 +321,19 @@ export function SubjectsClient({ initialSubjects, classes, teachers, academicYea
                             <Input type="number" value={subjectCredits} onChange={(e) => setSubjectCredits(e.target.value)} required />
                         </div>
                         <div className="space-y-2">
-                            <Label>Grade Level (Optional)</Label>
+                            <Label>Class Level (Optional)</Label>
                             <Select value={subjectClassId} onValueChange={setSubjectClassId}>
                                 <SelectTrigger>
                                     <SelectValue placeholder="General Subject" />
                                 </SelectTrigger>
                                 <SelectContent>
-                                    <SelectItem value="none">General (All Grades)</SelectItem>
+                                    <SelectItem value="none">General (All Classes)</SelectItem>
                                     {classes.map((c) => (
                                         <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                                     ))}
                                 </SelectContent>
                             </Select>
-                            <p className="text-xs text-muted-foreground">Link this subject to a specific grade level.</p>
+                            <p className="text-xs text-muted-foreground">Link this subject to a specific class level.</p>
                         </div>
                         <DialogFooter>
                             <Button type="submit" disabled={isSubmitting}>

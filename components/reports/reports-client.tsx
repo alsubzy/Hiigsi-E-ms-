@@ -81,7 +81,7 @@ export function ReportsClient({
             Attendance
           </Button>
           <Button variant={view === "grading" ? "default" : "outline"} onClick={() => setView("grading")}>
-            Grading
+            Marks
           </Button>
           <Button variant={view === "financial" ? "default" : "outline"} onClick={() => setView("financial")}>
             Financial
@@ -127,8 +127,8 @@ export function ReportsClient({
                   <span className="font-semibold">{attendanceReport.stats?.totalRecords}</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm">Total Grade Entries</span>
-                  <span className="font-semibold">{gradingReport.stats?.totalGrades}</span>
+                  <span className="text-sm">Total Mark Entries</span>
+                  <span className="font-semibold">{gradingReport.stats?.totalMarks}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-sm">Completed Payments</span>
@@ -189,7 +189,7 @@ export function ReportsClient({
                   <TableRow>
                     <TableHead>Date</TableHead>
                     <TableHead>Student</TableHead>
-                    <TableHead>Grade</TableHead>
+                    <TableHead>Class</TableHead>
                     <TableHead>Status</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -199,7 +199,7 @@ export function ReportsClient({
                       <TableCell>{new Date(record.date).toLocaleDateString()}</TableCell>
                       <TableCell>{record.student?.name}</TableCell>
                       <TableCell>
-                        {record.student?.grade}
+                        {record.student?.class_name}
                         {record.student?.section}
                       </TableCell>
                       <TableCell className="capitalize">{record.status}</TableCell>
@@ -214,15 +214,15 @@ export function ReportsClient({
         {view === "grading" && (
           <Card>
             <CardHeader>
-              <CardTitle>Grading Summary</CardTitle>
+              <CardTitle>Marks Summary</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="grid gap-4 md:grid-cols-3 mb-6">
                 <Card>
                   <CardContent className="pt-6">
                     <div className="text-center">
-                      <p className="text-sm text-muted-foreground">Total Grades</p>
-                      <p className="text-2xl font-bold">{gradingReport.stats?.totalGrades}</p>
+                      <p className="text-sm text-muted-foreground">Total Marks</p>
+                      <p className="text-2xl font-bold">{gradingReport.stats?.totalMarks}</p>
                     </div>
                   </CardContent>
                 </Card>
@@ -237,12 +237,12 @@ export function ReportsClient({
                 <Card>
                   <CardContent className="pt-6">
                     <div className="text-center">
-                      <p className="text-sm text-muted-foreground">Grade Distribution</p>
+                      <p className="text-sm text-muted-foreground">Result Distribution</p>
                       <div className="text-sm mt-2">
-                        {gradingReport.stats?.gradeDistribution &&
-                          Object.entries(gradingReport.stats.gradeDistribution).map(([grade, count]: [string, any], i) => (
-                            <div key={`grade-${grade}-${i}`} className="flex justify-between">
-                              <span>{grade}:</span>
+                        {gradingReport.stats?.resultDistribution &&
+                          Object.entries(gradingReport.stats.resultDistribution).map(([result, count]: [string, any], i) => (
+                            <div key={`result-${result}-${i}`} className="flex justify-between">
+                              <span>{result}:</span>
                               <span className="font-semibold">{count}</span>
                             </div>
                           ))}

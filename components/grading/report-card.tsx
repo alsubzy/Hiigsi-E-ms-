@@ -20,7 +20,7 @@ export function ReportCardView({ reportCard }: ReportCardProps) {
           <div>
             <CardTitle className="text-2xl">Student Report Card</CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
-              {reportCard.student.grade} - {reportCard.student.section}
+              Class {reportCard.student.class_name} - {reportCard.student.section}
             </p>
           </div>
           <Button onClick={handlePrint} variant="outline">
@@ -41,8 +41,8 @@ export function ReportCardView({ reportCard }: ReportCardProps) {
               <p className="font-semibold">{reportCard.student.roll_number}</p>
             </div>
             <div>
-              <p className="text-sm text-muted-foreground">Grade</p>
-              <p className="font-semibold">Grade {reportCard.student.grade}</p>
+              <p className="text-sm text-muted-foreground">Class</p>
+              <p className="font-semibold">Class {reportCard.student.class_name}</p>
             </div>
             <div>
               <p className="text-sm text-muted-foreground">Section</p>
@@ -56,17 +56,17 @@ export function ReportCardView({ reportCard }: ReportCardProps) {
                 <tr>
                   <th className="text-left p-3 font-semibold">Subject</th>
                   <th className="text-center p-3 font-semibold">Marks</th>
-                  <th className="text-center p-3 font-semibold">Grade</th>
+                  <th className="text-center p-3 font-semibold">Result</th>
                   <th className="text-left p-3 font-semibold">Remarks</th>
                 </tr>
               </thead>
               <tbody>
-                {reportCard.grades.map((gradeItem: any, index: number) => (
-                  <tr key={gradeItem.id} className={index % 2 === 0 ? "bg-muted/20" : ""}>
-                    <td className="p-3 font-medium">{gradeItem.subjects.name}</td>
-                    <td className="p-3 text-center">{Number(gradeItem.marks).toFixed(0)}</td>
-                    <td className="p-3 text-center font-semibold">{gradeItem.grade}</td>
-                    <td className="p-3 text-sm text-muted-foreground">{gradeItem.remarks || "-"}</td>
+                {reportCard.marks.map((markItem: any, index: number) => (
+                  <tr key={markItem.id} className={index % 2 === 0 ? "bg-muted/20" : ""}>
+                    <td className="p-3 font-medium">{markItem.subjects.name}</td>
+                    <td className="p-3 text-center">{Number(markItem.marks).toFixed(0)}</td>
+                    <td className="p-3 text-center font-semibold">{markItem.result}</td>
+                    <td className="p-3 text-sm text-muted-foreground">{markItem.remarks || "-"}</td>
                   </tr>
                 ))}
               </tbody>
@@ -74,7 +74,7 @@ export function ReportCardView({ reportCard }: ReportCardProps) {
                 <tr>
                   <td className="p-3">Overall</td>
                   <td className="p-3 text-center">{reportCard.avgMarks.toFixed(1)}</td>
-                  <td className="p-3 text-center text-lg">{reportCard.overallGrade}</td>
+                  <td className="p-3 text-center text-lg">{reportCard.overallResult}</td>
                   <td className="p-3"></td>
                 </tr>
               </tfoot>

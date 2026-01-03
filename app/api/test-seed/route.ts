@@ -45,12 +45,12 @@ export async function GET() {
         }
 
         // Create structure
-        let { data: fs } = await supabase.from("fee_structures").select("*").eq("fee_category_id", cat.id).eq("grade", student.grade).single()
+        let { data: fs } = await supabase.from("fee_structures").select("*").eq("fee_category_id", cat.id).eq("class_name", student.class_name).single()
         if (!fs) {
             const { data: newFs, error: fsError } = await supabase.from("fee_structures").insert({
                 fee_category_id: cat.id,
                 academic_year_id: ay.id,
-                grade: student.grade,
+                class_name: student.class_name,
                 amount: 100.00
             }).select().single()
             if (fsError) throw fsError

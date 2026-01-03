@@ -37,7 +37,7 @@ export async function getAttendanceReport(startDate?: string, endDate?: string) 
 
   let query = supabase.from("attendance").select(`
     *,
-    student:students(name, grade, section)
+    student:students(name, class_name, section)
   `)
 
   if (startDate) {
@@ -88,13 +88,13 @@ export async function getAttendanceReport(startDate?: string, endDate?: string) 
 export async function getGradingReport(grade?: string, term?: string) {
   const supabase = await createClient()
 
-  let query = supabase.from("grades").select(`
+  let query = supabase.from("class_marks").select(`
     *,
-    student:students(name, roll_number, grade, section)
+    student:students(name, roll_number, class_name, section)
   `)
 
   if (grade) {
-    query = query.eq("student.grade", grade)
+    query = query.eq("student.class_name", grade)
   }
   if (term) {
     query = query.eq("term", term)
@@ -117,15 +117,15 @@ export async function getGradingReport(grade?: string, term?: string) {
   }
 
   // Calculate statistics
-  const totalGrades = data?.length || 0
+  const totalMarks = data?.length || 0
   const averageMarks = data?.length
-    ? (data.reduce((sum, g) => sum + (g.marks_obtained || 0), 0) / data.length).toFixed(1)
+    ? (data.reduce((sum, g) => sum + (g.marks || 0), 0) / data.length).toFixed(1)
     : "0"
 
-  const gradeDistribution = data?.reduce(
+  const resultDistribution = data?.reduce(
     (acc, g) => {
-      const grade = g.grade || "N/A"
-      acc[grade] = (acc[grade] || 0) + 1
+      const result = g.result || "N/A"
+      acc[result] = (acc[result] || 0) + 1
       return acc
     },
     {} as Record<string, number>,
@@ -135,9 +135,9 @@ export async function getGradingReport(grade?: string, term?: string) {
     success: true,
     data: data || [],
     stats: {
-      totalGrades,
+      totalMarks,
       averageMarks,
-      gradeDistribution,
+      resultDistribution,
     },
   }
 }
@@ -147,7 +147,7 @@ export async function getFinancialReport(startDate?: string, endDate?: string) {
 
   let query = supabase.from("payments").select(`
     *,
-    student:students(name, roll_number, grade, section)
+    student:students(name, roll_number, class_name, section)
   `)
 
   if (startDate) {

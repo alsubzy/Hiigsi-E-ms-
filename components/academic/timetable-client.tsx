@@ -194,10 +194,10 @@ export function TimetableClient({ initialClasses, academicYears }: TimetableClie
             <Card>
                 <CardContent className="p-4 flex gap-4 items-end">
                     <div className="grid gap-2 w-[200px]">
-                        <Label>Grade Level</Label>
+                        <Label>Class Level</Label>
                         <Select value={selectedClassId} onValueChange={(val) => { setSelectedClassId(val); setSelectedSectionId(""); }}>
                             <SelectTrigger>
-                                <SelectValue placeholder="Select Grade" />
+                                <SelectValue placeholder="Select Class" />
                             </SelectTrigger>
                             <SelectContent>
                                 {initialClasses.map(c => (

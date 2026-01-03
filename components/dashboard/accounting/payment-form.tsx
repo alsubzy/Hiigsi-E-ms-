@@ -31,7 +31,7 @@ export function PaymentForm() {
         const supabase = createClient()
         const { data } = await supabase
             .from("students")
-            .select("id, first_name, last_name, grade")
+            .select("id, first_name, last_name, class_name")
             .eq("status", "active")
             .order("first_name")
 
@@ -102,7 +102,7 @@ export function PaymentForm() {
                         <SelectContent>
                             {students.map(student => (
                                 <SelectItem key={student.id} value={student.id}>
-                                    {student.first_name} {student.last_name} ({student.grade})
+                                    {student.first_name} {student.last_name} ({student.class_name})
                                 </SelectItem>
                             ))}
                         </SelectContent>

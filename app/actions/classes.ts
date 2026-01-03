@@ -80,19 +80,11 @@ export async function createClass(data: { name: string; level: number; descripti
             return { success: false, error: "Valid class level is required." }
         }
 
-        // 3. Duplicate Check
-        // Enforce unique Name for clarity.
-        const { data: existingName, error: checkError } = await supabase.from("classes").select("id").eq("name", data.name).maybeSingle()
-        if (checkError) {
-            console.error("Check error:", checkError)
-            return { success: false, error: "Database error during duplicate check. Please ensure migrations are applied." }
-        }
-
-        if (existingName) {
-            return { success: false, error: `Class with name "${data.name}" already exists.` }
-        }
-
-        const { error } = await supabase.from("classes").insert(data)
+        const { error } = await supabase.from("classes").insert({
+            name: data.name,
+            level: data.level,
+            description: data.description
+        })
 
         if (error) {
             console.error("Error creating class:", error)

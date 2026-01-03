@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { GradeEntryForm } from "@/components/grading/grade-entry-form"
 import { ReportCardView } from "@/components/grading/report-card"
 import { getStudents } from "@/app/actions/students"
-import { getSubjectsByGrade, getReportCard } from "@/app/actions/grading"
+import { getSubjectsByClass, getReportCard } from "@/app/actions/marks"
 import type { Student } from "@/lib/types"
 
 interface GradingClientProps {
@@ -19,7 +19,7 @@ const terms = ["Term 1", "Term 2", "Term 3", "Final"]
 
 export function GradingClient({ userRole }: GradingClientProps) {
   const [view, setView] = useState<"entry" | "report">("entry")
-  const [grade, setGrade] = useState("1")
+  const [className, setClassName] = useState("1")
   const [section, setSection] = useState("A")
   const [term, setTerm] = useState("Term 1")
   const [selectedStudentId, setSelectedStudentId] = useState<string>("")
@@ -30,7 +30,7 @@ export function GradingClient({ userRole }: GradingClientProps) {
 
   useEffect(() => {
     loadData()
-  }, [grade, section])
+  }, [className, section])
 
   useEffect(() => {
     if (view === "report" && selectedStudentId) {
@@ -43,11 +43,11 @@ export function GradingClient({ userRole }: GradingClientProps) {
     try {
       const allStudents = await getStudents()
       const filteredStudents = allStudents.filter(
-        (s) => s.grade === grade && s.section === section && s.status === "active",
+        (s) => s.class_name === className && s.section === section && s.status === "active",
       )
       setStudents(filteredStudents)
 
-      const subjectsData = await getSubjectsByGrade(grade)
+      const subjectsData = await getSubjectsByClass(className)
       setSubjects(subjectsData)
     } catch (error) {
       console.error("Error loading data:", error)
@@ -75,17 +75,17 @@ export function GradingClient({ userRole }: GradingClientProps) {
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div className="flex flex-col gap-4 md:flex-row md:items-end">
               <div className="space-y-2">
-                <Label>Grade</Label>
-                <Select value={grade} onValueChange={setGrade}>
+                <Label>Class</Label>
+                <Select value={className} onValueChange={setClassName}>
                   <SelectTrigger className="w-[140px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">Grade 1</SelectItem>
-                    <SelectItem value="2">Grade 2</SelectItem>
-                    <SelectItem value="3">Grade 3</SelectItem>
-                    <SelectItem value="4">Grade 4</SelectItem>
-                    <SelectItem value="5">Grade 5</SelectItem>
+                    <SelectItem value="1">Class 1</SelectItem>
+                    <SelectItem value="2">Class 2</SelectItem>
+                    <SelectItem value="3">Class 3</SelectItem>
+                    <SelectItem value="4">Class 4</SelectItem>
+                    <SelectItem value="5">Class 5</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -141,7 +141,7 @@ export function GradingClient({ userRole }: GradingClientProps) {
 
             <div className="flex gap-2">
               <Button variant={view === "entry" ? "default" : "outline"} onClick={() => setView("entry")}>
-                Grade Entry
+                Mark Entry
               </Button>
               <Button variant={view === "report" ? "default" : "outline"} onClick={() => setView("report")}>
                 Report Card
@@ -165,8 +165,8 @@ export function GradingClient({ userRole }: GradingClientProps) {
           <Card>
             <CardContent className="py-12 text-center text-muted-foreground">
               {students.length === 0
-                ? `No students found for Grade ${grade} Section ${section}`
-                : "No subjects configured for this grade"}
+                ? `No students found for Class ${className} Section ${section}`
+                : "No subjects configured for this class"}
             </CardContent>
           </Card>
         )

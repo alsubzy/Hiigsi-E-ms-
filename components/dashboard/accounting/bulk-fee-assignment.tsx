@@ -68,10 +68,10 @@ export function BulkFeeAssignment({ onSuccess }: { onSuccess: () => void }) {
     const selectedStructure = feeStructures.find(f => f.id === selectedStructureId)
 
     const filteredStudents = students.filter(s => {
-        const matchesGrade = selectedStructure ? s.grade === selectedStructure.grade : true
+        const matchesClass = selectedStructure ? s.class_name === selectedStructure.class_name : true
         const matchesSearch = s.first_name?.toLowerCase().includes(studentSearch.toLowerCase()) ||
             s.last_name?.toLowerCase().includes(studentSearch.toLowerCase())
-        return matchesGrade && matchesSearch
+        return matchesClass && matchesSearch
     })
 
     const handleSelectAll = (checked: boolean) => {
@@ -165,7 +165,7 @@ export function BulkFeeAssignment({ onSuccess }: { onSuccess: () => void }) {
                                         {feeStructures.map((fs) => (
                                             <SelectItem key={fs.id} value={fs.id} className="py-3 rounded-xl focus:bg-blue-50">
                                                 <div className="flex flex-col">
-                                                    <span className="font-bold">{fs.fee_categories?.name} - Grade {fs.grade}</span>
+                                                    <span className="font-bold">{fs.fee_categories?.name} - Class {fs.class_name}</span>
                                                     <span className="text-xs text-gray-500">{fs.academic_years?.name} • {fs.terms?.name} • ${Number(fs.amount).toLocaleString()}</span>
                                                 </div>
                                             </SelectItem>
@@ -225,7 +225,7 @@ export function BulkFeeAssignment({ onSuccess }: { onSuccess: () => void }) {
                                         <div className="h-40 flex flex-col items-center justify-center text-gray-400">
                                             <Users className="w-12 h-12 opacity-20 mb-2" />
                                             <p className="font-bold text-lg">No students found</p>
-                                            <p className="text-xs">Ensure students are enrolled in Grade {selectedStructure?.grade}</p>
+                                            <p className="text-xs">Ensure students are enrolled in Class {selectedStructure?.class_name}</p>
                                         </div>
                                     ) : (
                                         filteredStudents.map((s) => (
@@ -288,7 +288,7 @@ export function BulkFeeAssignment({ onSuccess }: { onSuccess: () => void }) {
                                         <p className="text-xs font-black uppercase tracking-widest text-gray-400 mb-2">Assignment Summary</p>
                                         <div className="flex flex-wrap gap-2">
                                             <Badge className="bg-blue-600 text-white font-black px-4 py-1.5 rounded-xl uppercase text-[10px] tracking-widest">{selectedStructure?.fee_categories?.name}</Badge>
-                                            <Badge variant="outline" className="font-bold border-gray-200 px-4 py-1.5 rounded-xl">Grade {selectedStructure?.grade}</Badge>
+                                            <Badge variant="outline" className="font-bold border-gray-200 px-4 py-1.5 rounded-xl">Class {selectedStructure?.class_name}</Badge>
                                             <Badge variant="outline" className="font-bold border-gray-200 px-4 py-1.5 rounded-xl">{selectedStudentIds.length} Students</Badge>
                                         </div>
                                     </div>

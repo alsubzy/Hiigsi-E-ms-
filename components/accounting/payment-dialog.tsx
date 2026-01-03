@@ -15,7 +15,7 @@ interface Student {
   id: string
   name: string
   roll_number: string
-  grade: string
+  class_name: string
   section: string
 }
 
@@ -107,7 +107,7 @@ export function PaymentDialog({ open, onOpenChange, student, onSuccess }: Paymen
           <div className="space-y-2">
             <Label>Student</Label>
             <p className="text-sm font-medium">
-              {student.name} ({student.roll_number}) - Grade {student.grade}
+              {student.name} ({student.roll_number}) - Class {student.class_name}
               {student.section}
             </p>
           </div>

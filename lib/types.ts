@@ -17,8 +17,17 @@ export interface Student {
   email?: string
   phone?: string
   address?: string
-  grade: string
-  section: string
+  section_id: string  // UUID reference to sections table
+  section?: {  // Optional joined data
+    id: string
+    name: string
+    class_id: string
+    class?: {
+      id: string
+      name: string
+      level: number
+    }
+  }
   admission_date: string
   parent_name: string
   parent_phone: string
@@ -44,17 +53,21 @@ export interface Subject {
   id: string
   name: string
   code: string
-  grade: string
+  class_id: string  // UUID reference to classes table
+  class?: {  // Optional joined data
+    id: string
+    name: string
+  }
   created_at: string
 }
 
-export interface Grade {
+export interface Mark {
   id: string
   student_id: string
   subject_id: string
   term: string
   marks: number
-  grade?: string
+  result?: string
   remarks?: string
   created_by?: string
   created_at: string
@@ -78,7 +91,11 @@ export interface Payment {
 
 export interface FeeStructure {
   id: string
-  grade: string
+  class_id: string  // UUID reference to classes table
+  class?: {  // Optional joined data
+    id: string
+    name: string
+  }
   fee_type: string
   amount: number
   frequency: "monthly" | "quarterly" | "yearly" | "one-time"

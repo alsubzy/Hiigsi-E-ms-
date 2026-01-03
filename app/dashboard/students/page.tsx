@@ -4,6 +4,7 @@ import { createClient } from "@/lib/supabase/server"
 import { Header } from "@/components/dashboard/header"
 import { StudentsClient } from "@/components/students/students-client"
 import { getStudents } from "@/app/actions/students"
+import { getClasses } from "@/app/actions/classes"
 
 export default async function StudentsPage() {
   const supabase = await createClient()
@@ -29,11 +30,13 @@ export default async function StudentsPage() {
   }
 
   const students = await getStudents()
+  const classesRes = await getClasses()
+  const classes = classesRes.success ? classesRes.data : []
 
   return (
     <>
       <Header title="Students" description="Manage student information and records" />
-      <StudentsClient students={students} userRole={profile.role} />
+      <StudentsClient students={students} userRole={profile.role} classes={classes || []} />
     </>
   )
 }

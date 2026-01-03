@@ -164,10 +164,10 @@ export function ClassesClient({ initialClasses }: ClassesClientProps) {
             <div className="flex items-center justify-between">
                 <div>
                     <h2 className="text-3xl font-bold tracking-tight">Classes & Sections</h2>
-                    <p className="text-muted-foreground">Manage grade levels and their course sections.</p>
+                    <p className="text-muted-foreground">Manage class levels and their course sections.</p>
                 </div>
                 <Button onClick={() => handleOpenClassDialog()}>
-                    <Plus className="mr-2 h-4 w-4" /> Add Grade Level
+                    <Plus className="mr-2 h-4 w-4" /> Add Class Level
                 </Button>
             </div>
 
@@ -176,7 +176,7 @@ export function ClassesClient({ initialClasses }: ClassesClientProps) {
                     <Card>
                         <CardContent className="flex flex-col items-center justify-center p-8 text-muted-foreground">
                             <p>No classes defined yet.</p>
-                            <Button variant="link" onClick={() => handleOpenClassDialog()}>Create your first Grade</Button>
+                            <Button variant="link" onClick={() => handleOpenClassDialog()}>Create your first Class</Button>
                         </CardContent>
                     </Card>
                 ) : (
@@ -242,12 +242,12 @@ export function ClassesClient({ initialClasses }: ClassesClientProps) {
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>{editingClass ? "Edit Class" : "New Class"}</DialogTitle>
-                        <DialogDescription>Define a grade level (e.g. Grade 1, Grade 10).</DialogDescription>
+                        <DialogDescription>Define a class level (e.g. Class 1, Class 10).</DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleSaveClass} className="space-y-4">
                         <div className="space-y-2">
                             <Label>Class Name</Label>
-                            <Input placeholder="e.g. Grade 10" value={className} onChange={(e) => setClassName(e.target.value)} required />
+                            <Input placeholder="e.g. Class 10" value={className} onChange={(e) => setClassName(e.target.value)} required />
                         </div>
                         <div className="space-y-2">
                             <Label>Level (Numeric)</Label>
@@ -268,7 +268,7 @@ export function ClassesClient({ initialClasses }: ClassesClientProps) {
                 <DialogContent>
                     <DialogHeader>
                         <DialogTitle>Add Section</DialogTitle>
-                        <DialogDescription>Add a section (e.g. A, B, Blue) to Grade.</DialogDescription>
+                        <DialogDescription>Add a section (e.g. A, B, Blue) to Class.</DialogDescription>
                     </DialogHeader>
                     <form onSubmit={handleCreateSection} className="space-y-4">
                         <div className="space-y-2">
@@ -292,9 +292,9 @@ export function ClassesClient({ initialClasses }: ClassesClientProps) {
                 open={isDeleteDialogOpen}
                 onOpenChange={setIsDeleteDialogOpen}
                 onConfirm={confirmDelete}
-                title={deleteType === "class" ? "Delete Grade Level" : "Delete Section"}
+                title={deleteType === "class" ? "Delete Class Level" : "Delete Section"}
                 description={deleteType === "class"
-                    ? "Are you sure you want to delete this grade level? All associated sections will also be deleted. This action cannot be undone."
+                    ? "Are you sure you want to delete this class level? All associated sections will also be deleted. This action cannot be undone."
                     : "Are you sure you want to delete this section? This action cannot be undone."}
                 confirmText="Delete"
                 variant="destructive"

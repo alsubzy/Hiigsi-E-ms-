@@ -18,12 +18,13 @@ import { ConfirmDialog } from "@/components/ui/confirm-dialog"
 interface StudentsClientProps {
   students: Student[]
   userRole: string
+  classes: any[] // Type should be ClassRange
 }
 
-export function StudentsClient({ students, userRole }: StudentsClientProps) {
+export function StudentsClient({ students, userRole, classes }: StudentsClientProps) {
   const [filteredStudents, setFilteredStudents] = useState<Student[]>(students)
   const [searchQuery, setSearchQuery] = useState("")
-  const [gradeFilter, setGradeFilter] = useState("all")
+  const [classFilter, setClassFilter] = useState("all")
   const [dialogOpen, setDialogOpen] = useState(false)
   const [selectedStudent, setSelectedStudent] = useState<Student | undefined>()
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false)
@@ -43,13 +44,13 @@ export function StudentsClient({ students, userRole }: StudentsClientProps) {
       )
     }
 
-    // Filter by grade
-    if (gradeFilter !== "all") {
-      filtered = filtered.filter((student) => student.grade === gradeFilter)
+    // Filter by class
+    if (classFilter !== "all") {
+      filtered = filtered.filter((student) => student.section?.class?.id === classFilter)
     }
 
     setFilteredStudents(filtered)
-  }, [searchQuery, gradeFilter, students])
+  }, [searchQuery, classFilter, students])
 
   const handleAddStudent = () => {
     setSelectedStudent(undefined)
@@ -95,17 +96,17 @@ export function StudentsClient({ students, userRole }: StudentsClientProps) {
                 className="pl-9"
               />
             </div>
-            <Select value={gradeFilter} onValueChange={setGradeFilter}>
+            <Select value={classFilter} onValueChange={setClassFilter}>
               <SelectTrigger className="w-[140px]">
-                <SelectValue placeholder="Filter by grade" />
+                <SelectValue placeholder="Filter by class" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="all">All Grades</SelectItem>
-                <SelectItem value="1">Grade 1</SelectItem>
-                <SelectItem value="2">Grade 2</SelectItem>
-                <SelectItem value="3">Grade 3</SelectItem>
-                <SelectItem value="4">Grade 4</SelectItem>
-                <SelectItem value="5">Grade 5</SelectItem>
+                <SelectItem value="all">All Classes</SelectItem>
+                {classes.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
           </div>
@@ -124,7 +125,7 @@ export function StudentsClient({ students, userRole }: StudentsClientProps) {
             <TableRow>
               <TableHead>Roll No.</TableHead>
               <TableHead>Name</TableHead>
-              <TableHead>Grade</TableHead>
+              <TableHead>Class</TableHead>
               <TableHead>Section</TableHead>
               <TableHead>Parent Contact</TableHead>
               <TableHead>Status</TableHead>
@@ -148,8 +149,8 @@ export function StudentsClient({ students, userRole }: StudentsClientProps) {
                       <p className="text-sm text-muted-foreground">{student.email || "N/A"}</p>
                     </div>
                   </TableCell>
-                  <TableCell>Grade {student.grade}</TableCell>
-                  <TableCell>{student.section}</TableCell>
+                  <TableCell>{student.section?.class?.name || "N/A"}</TableCell>
+                  <TableCell>{student.section?.name || "N/A"}</TableCell>
                   <TableCell>
                     <div>
                       <p className="text-sm">{student.parent_name}</p>

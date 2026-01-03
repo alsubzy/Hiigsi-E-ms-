@@ -7,7 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import type { Student } from "@/lib/types"
-import { saveGrade, getGradesByStudent } from "@/app/actions/grading"
+import { saveMark, getMarksByStudent } from "@/app/actions/marks"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
@@ -20,8 +20,8 @@ interface GradeEntryFormProps {
 export function GradeEntryForm({ students, subjects, term }: GradeEntryFormProps) {
   const router = useRouter()
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null)
-  const [gradeData, setGradeData] = useState<Record<string, { marks: number; remarks: string }>>({})
-  const [existingGrades, setExistingGrades] = useState<any[]>([])
+  const [markData, setMarkData] = useState<Record<string, { marks: number; remarks: string }>>({})
+  const [existingMarks, setExistingMarks] = useState<any[]>([])
   const [isSaving, setIsSaving] = useState(false)
 
   useEffect(() => {
@@ -32,31 +32,31 @@ export function GradeEntryForm({ students, subjects, term }: GradeEntryFormProps
 
   useEffect(() => {
     if (selectedStudent) {
-      loadStudentGrades()
+      loadStudentMarks()
     }
   }, [selectedStudent, term])
 
-  const loadStudentGrades = async () => {
+  const loadStudentMarks = async () => {
     if (!selectedStudent) return
 
-    const grades = await getGradesByStudent(selectedStudent.id)
-    const termGrades = grades.filter((g: any) => g.term === term)
-    setExistingGrades(termGrades)
+    const marks = await getMarksByStudent(selectedStudent.id)
+    const termMarks = marks.filter((g: any) => g.term === term)
+    setExistingMarks(termMarks)
 
-    // Initialize grade data
+    // Initialize mark data
     const initialData: Record<string, { marks: number; remarks: string }> = {}
     subjects.forEach((subject) => {
-      const existing = termGrades.find((g: any) => g.subject_id === subject.id)
+      const existing = termMarks.find((g: any) => g.subject_id === subject.id)
       initialData[subject.id] = {
         marks: existing ? Number(existing.marks) : 0,
         remarks: existing?.remarks || "",
       }
     })
-    setGradeData(initialData)
+    setMarkData(initialData)
   }
 
-  const updateGrade = (subjectId: string, field: "marks" | "remarks", value: string | number) => {
-    setGradeData((prev) => ({
+  const updateMark = (subjectId: string, field: "marks" | "remarks", value: string | number) => {
+    setMarkData((prev) => ({
       ...prev,
       [subjectId]: {
         ...prev[subjectId],
@@ -70,19 +70,19 @@ export function GradeEntryForm({ students, subjects, term }: GradeEntryFormProps
 
     setIsSaving(true)
     try {
-      // Save all grades for the selected student
+      // Save all marks for the selected student
       await Promise.all(
         subjects.map((subject) =>
-          saveGrade(
+          saveMark(
             selectedStudent.id,
             subject.id,
             term,
-            gradeData[subject.id]?.marks || 0,
-            gradeData[subject.id]?.remarks || "",
+            markData[subject.id]?.marks || 0,
+            markData[subject.id]?.remarks || "",
           ),
         ),
       )
-      toast.success("Grades saved successfully!")
+      toast.success("Marks saved successfully!")
       router.refresh()
 
       // Move to next student if available
@@ -118,9 +118,9 @@ export function GradeEntryForm({ students, subjects, term }: GradeEntryFormProps
     )
   }
 
-  const totalMarks = Object.values(gradeData).reduce((sum, g) => sum + g.marks, 0)
+  const totalMarks = Object.values(markData).reduce((sum, g) => sum + g.marks, 0)
   const avgMarks = subjects.length > 0 ? totalMarks / subjects.length : 0
-  const overallGrade = calculateLetterGrade(avgMarks)
+  const overallResult = calculateLetterGrade(avgMarks)
 
   return (
     <div className="space-y-4">
@@ -131,7 +131,7 @@ export function GradeEntryForm({ students, subjects, term }: GradeEntryFormProps
               <div>
                 <CardTitle className="text-lg">{`${selectedStudent.first_name} ${selectedStudent.last_name}`}</CardTitle>
                 <p className="text-sm text-muted-foreground">
-                  Roll: {selectedStudent.roll_number} | Grade {selectedStudent.grade} - {selectedStudent.section}
+                  Roll: {selectedStudent.roll_number} | Class {selectedStudent.class_name} - {selectedStudent.section}
                 </p>
               </div>
               <div className="flex gap-2">
@@ -148,7 +148,7 @@ export function GradeEntryForm({ students, subjects, term }: GradeEntryFormProps
               </div>
             </div>
             <div className="text-right">
-              <p className="text-2xl font-bold">{overallGrade}</p>
+              <p className="text-2xl font-bold">{overallResult}</p>
               <p className="text-sm text-muted-foreground">{avgMarks.toFixed(1)}%</p>
             </div>
           </div>
@@ -156,8 +156,8 @@ export function GradeEntryForm({ students, subjects, term }: GradeEntryFormProps
         <CardContent>
           <div className="space-y-4">
             {subjects.map((subject) => {
-              const marks = gradeData[subject.id]?.marks || 0
-              const letterGrade = calculateLetterGrade(marks)
+              const marks = markData[subject.id]?.marks || 0
+              const letterResult = calculateLetterGrade(marks)
 
               return (
                 <div key={subject.id} className="border rounded-lg p-4 space-y-3">
@@ -170,22 +170,22 @@ export function GradeEntryForm({ students, subjects, term }: GradeEntryFormProps
                           min="0"
                           max="100"
                           value={marks}
-                          onChange={(e) => updateGrade(subject.id, "marks", e.target.value)}
+                          onChange={(e) => updateMark(subject.id, "marks", e.target.value)}
                           className="w-20 text-center"
                           disabled={isSaving}
                         />
                         <span className="text-sm text-muted-foreground">/ 100</span>
                       </div>
                       <div className="w-12 text-center">
-                        <span className="text-lg font-bold">{letterGrade}</span>
+                        <span className="text-lg font-bold">{letterResult}</span>
                       </div>
                     </div>
                   </div>
                   <div>
                     <Label className="text-sm">Remarks</Label>
                     <Textarea
-                      value={gradeData[subject.id]?.remarks || ""}
-                      onChange={(e) => updateGrade(subject.id, "remarks", e.target.value)}
+                      value={markData[subject.id]?.remarks || ""}
+                      onChange={(e) => updateMark(subject.id, "remarks", e.target.value)}
                       placeholder="Optional remarks..."
                       className="mt-1"
                       rows={2}
@@ -213,7 +213,7 @@ export function GradeEntryForm({ students, subjects, term }: GradeEntryFormProps
           Previous Student
         </Button>
         <Button onClick={handleSave} disabled={isSaving} size="lg">
-          {isSaving ? "Saving..." : "Save Grades"}
+          {isSaving ? "Saving..." : "Save Marks"}
         </Button>
         <Button
           variant="outline"

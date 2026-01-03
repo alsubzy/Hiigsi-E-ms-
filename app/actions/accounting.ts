@@ -259,7 +259,7 @@ export async function createFeeStructure(data: {
   fee_category_id: string
   academic_year_id: string
   term_id: string
-  grade: string
+  class_name: string
   amount: number
   is_mandatory?: boolean
   due_date?: string
@@ -274,7 +274,7 @@ export async function updateFeeStructure(id: string, data: {
   fee_category_id: string
   academic_year_id: string
   term_id: string
-  grade: string
+  class_name: string
   amount: number
   is_mandatory?: boolean
   due_date?: string

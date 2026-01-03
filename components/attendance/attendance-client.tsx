@@ -11,17 +11,20 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { CalendarIcon } from "lucide-react"
 import { format } from "date-fns"
 import { cn } from "@/lib/utils"
-import { getStudents } from "@/app/actions/students"
+import { getStudents, getStudentsBySection } from "@/app/actions/students"
 import { getAttendanceByDate, getAttendanceStats } from "@/app/actions/attendance"
 import type { Student } from "@/lib/types"
 
+import { ClassRange } from "@/app/actions/classes"
+
 interface AttendanceClientProps {
   userRole: string
+  initialClasses: ClassRange[]
 }
 
-export function AttendanceClient({ userRole }: AttendanceClientProps) {
+export function AttendanceClient({ userRole, initialClasses }: AttendanceClientProps) {
   const [date, setDate] = useState<Date>(new Date())
-  const [grade, setGrade] = useState("1")
+  const [selectedClassId, setSelectedClassId] = useState(initialClasses[0]?.id || "")
   const [section, setSection] = useState("A")
   const [students, setStudents] = useState<Student[]>([])
   const [existingAttendance, setExistingAttendance] = useState<any[]>([])
@@ -29,21 +32,25 @@ export function AttendanceClient({ userRole }: AttendanceClientProps) {
   const [stats, setStats] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(false)
 
+  const selectedClass = initialClasses.find(c => c.id === selectedClassId)
+  const availableSections = selectedClass?.sections || []
+
   useEffect(() => {
     loadData()
-  }, [date, grade, section])
+  }, [date, selectedClassId, section])
 
   const loadData = async () => {
     setIsLoading(true)
     try {
       const dateString = format(date, "yyyy-MM-dd")
 
-      // Load students for selected grade and section
-      const allStudents = await getStudents()
-      const filteredStudents = allStudents.filter(
-        (s) => s.grade === grade && s.section === section && s.status === "active",
-      )
-      setStudents(filteredStudents)
+      // Load students for selected class and section
+      if (selectedClassId && section) {
+        const sectionStudents = await getStudentsBySection(section)
+        setStudents(sectionStudents)
+      } else {
+        setStudents([])
+      }
 
       // Load existing attendance for the date
       const attendance = await getAttendanceByDate(dateString)
@@ -90,31 +97,29 @@ export function AttendanceClient({ userRole }: AttendanceClientProps) {
               </div>
 
               <div className="space-y-2">
-                <Label>Grade</Label>
-                <Select value={grade} onValueChange={setGrade}>
-                  <SelectTrigger className="w-[140px]">
-                    <SelectValue />
+                <Label>Class</Label>
+                <Select value={selectedClassId} onValueChange={(val) => { setSelectedClassId(val); setSection("A"); }}>
+                  <SelectTrigger className="w-[180px]">
+                    <SelectValue placeholder="Select Class" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">Grade 1</SelectItem>
-                    <SelectItem value="2">Grade 2</SelectItem>
-                    <SelectItem value="3">Grade 3</SelectItem>
-                    <SelectItem value="4">Grade 4</SelectItem>
-                    <SelectItem value="5">Grade 5</SelectItem>
+                    {initialClasses.map(c => (
+                      <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
                 <Label>Section</Label>
-                <Select value={section} onValueChange={setSection}>
+                <Select value={section} onValueChange={setSection} disabled={!selectedClassId}>
                   <SelectTrigger className="w-[100px]">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="A">A</SelectItem>
-                    <SelectItem value="B">B</SelectItem>
-                    <SelectItem value="C">C</SelectItem>
+                    {availableSections.map(s => (
+                      <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -151,7 +156,7 @@ export function AttendanceClient({ userRole }: AttendanceClientProps) {
             <CardContent className="py-12 text-center text-muted-foreground">
               {!canMark
                 ? "You don't have permission to mark attendance"
-                : `No students found for Grade ${grade} Section ${section}`}
+                : `No students found for Class ${selectedClass?.name} Section ${section}`}
             </CardContent>
           </Card>
         )

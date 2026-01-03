@@ -43,14 +43,14 @@ export default async function DashboardPage() {
     const totalAttendance = todayAttendance?.length || 1
     const attendanceRate = Math.round((presentCount / totalAttendance) * 100)
 
-    // 3. Grades (Average)
-    // Fetch limited recent grades to avoid heavy query
-    const { data: recentGrades } = await supabase.from("grades").select("marks").limit(100)
+    // 3. Marks (Average)
+    // Fetch limited recent marks to avoid heavy query
+    const { data: recentMarks } = await supabase.from("class_marks").select("marks").limit(100)
     const avgMarks =
-      recentGrades && recentGrades.length > 0
-        ? recentGrades.reduce((sum, g) => sum + Number(g.marks), 0) / recentGrades.length
+      recentMarks && recentMarks.length > 0
+        ? recentMarks.reduce((sum, g) => sum + Number(g.marks), 0) / recentMarks.length
         : 0
-    const avgGrade = avgMarks >= 90 ? "A" : avgMarks >= 80 ? "B+" : avgMarks >= 70 ? "B" : avgMarks >= 60 ? "C+" : "C"
+    const avgResult = avgMarks >= 90 ? "A" : avgMarks >= 80 ? "B+" : avgMarks >= 70 ? "B" : avgMarks >= 60 ? "C+" : "C"
 
     // 4. Financials (Revenue & Expenses)
     // Fetch payments for this year to build chart
@@ -94,7 +94,7 @@ export default async function DashboardPage() {
       stats: {
         students: studentCount || 0,
         attendanceRate,
-        avgGrade,
+        avgResult,
         revenue: monthlyRevenue,
         revenueTrend: revenueTrend
       },

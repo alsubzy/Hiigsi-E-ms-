@@ -10,7 +10,7 @@ export interface AdminDashboardData {
     stats: {
         students: number
         attendanceRate: number
-        avgGrade: string
+        avgResult: string
         revenue: number
         revenueTrend: number
     }
@@ -51,8 +51,8 @@ export function AdminView({ data }: AdminViewProps) {
                     iconClassName="bg-green-100 text-green-600 dark:bg-green-900/20"
                 />
                 <StatsCard
-                    title={t("students.grade")}
-                    value={data.stats.avgGrade}
+                    title={t("students.result")}
+                    value={data.stats.avgResult}
                     icon={GraduationCap}
                     description="Current term average"
                     iconClassName="bg-purple-100 text-purple-600 dark:bg-purple-900/20"

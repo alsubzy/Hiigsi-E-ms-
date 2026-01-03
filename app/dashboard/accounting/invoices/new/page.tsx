@@ -16,49 +16,54 @@ import { FileText, ArrowLeft, Search, GraduationCap, CheckCircle } from "lucide-
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 
+// ... keep imports ...
+import { StudentSelect } from "@/components/students/student-select"
+
 export default function NewInvoicePage() {
     const router = useRouter()
-    const [students, setStudents] = useState<any[]>([])
+    // const [students, setStudents] = useState<any[]>([]) -- REMOVED
     const [selectedStudent, setSelectedStudent] = useState<any>(null)
     const [pendingFees, setPendingFees] = useState<any[]>([])
     const [selectedFeeIds, setSelectedFeeIds] = useState<string[]>([])
-    const [isLoading, setIsLoading] = useState(true)
+    // const [isLoading, setIsLoading] = useState(true) -- REMOVED
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [dueDate, setDueDate] = useState(format(new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), "yyyy-MM-dd"))
     const [notes, setNotes] = useState("")
 
-    useEffect(() => {
-        fetchStudents()
-    }, [])
+    // useEffect(() => { fetchStudents() }, []) -- REMOVED
 
-    async function fetchStudents() {
-        const supabase = createClient()
-        const { data } = await supabase.from("students").select("id, first_name, last_name, grade").eq("status", "active")
+    // Helper to get full student details after selection if needed, 
+    // or we can rely on what we have. API needs fetching fees by studentId.
 
-        const formattedData = data?.map(student => ({
-            ...student,
-            full_name: `${student.first_name} ${student.last_name}`
-        })) || []
-
-        setStudents(formattedData)
-        setIsLoading(false)
-    }
-
-    async function handleStudentChange(studentId: string) {
+    async function handleStudentChange(studentId: string | null) {
         if (!studentId) {
             setSelectedStudent(null)
             setPendingFees([])
             return
         }
 
-        const student = students.find(s => s.id === studentId)
-        setSelectedStudent(student)
+        // We need to fetch the student details to show the card
+        // Or we can update StudentSelect to pass the full student object? 
+        // For now let's fetch it or just use the ID if we strictly only need ID for creation.
+        // But UI shows "Selected Student" card.
 
-        // Fetch pending fees for this student
         try {
+            const supabase = createClient()
+            const { data: student } = await supabase
+                .from("students")
+                .select("id, first_name, last_name, grade")
+                .eq("id", studentId)
+                .single()
+
+            if (student) {
+                setSelectedStudent({
+                    ...student,
+                    full_name: `${student.first_name} ${student.last_name}`
+                })
+            }
+
+            // Fetch pending fees for this student
             const allFees = await getStudentFees(studentId)
-            // Only show fees that are not already fully invoiced or paid
-            // Simplified check for now
             setPendingFees(allFees.filter((f: any) => f.status === 'pending'))
             setSelectedFeeIds([])
         } catch (error: any) {
@@ -124,23 +129,16 @@ export default function NewInvoicePage() {
                                 Select Student
                             </div>
                         </div>
-                        <div className="relative">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-                            <select
-                                className="w-full pl-10 pr-4 py-3 bg-white border border-gray-200 rounded-xl focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all font-medium appearance-none"
-                                onChange={(e) => handleStudentChange(e.target.value)}
-                                defaultValue=""
-                            >
-                                <option value="" disabled>Search or select a student...</option>
-                                {students.map(s => (
-                                    <option key={s.id} value={s.id}>{s.full_name} — Grade {s.grade}</option>
-                                ))}
-                            </select>
+
+                        {/* REPLACED WITH STUDENT SELECT COMPONENT */}
+                        <div className="p-4 rounded-xl border border-gray-100 bg-white shadow-sm">
+                            <StudentSelect onSelect={handleStudentChange} />
                         </div>
+
                         {selectedStudent && (
                             <div className="p-4 rounded-xl bg-blue-50/50 border border-blue-100 flex items-center gap-4 animate-in fade-in">
                                 <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-lg">
-                                    {selectedStudent.full_name.charAt(0)}
+                                    {selectedStudent.full_name?.charAt(0)}
                                 </div>
                                 <div>
                                     <div className="font-bold text-gray-900">{selectedStudent.full_name}</div>

@@ -122,13 +122,13 @@ export function SyllabusClient({ initialSyllabus, classes, subjects, academicYea
             </div>
 
             <div className="flex items-center gap-2">
-                <Label>Filter by Grade:</Label>
+                <Label>Filter by Class:</Label>
                 <Select value={selectedClassId} onValueChange={setSelectedClassId}>
                     <SelectTrigger className="w-[180px]">
-                        <SelectValue placeholder="All Grades" />
+                        <SelectValue placeholder="All Classes" />
                     </SelectTrigger>
                     <SelectContent>
-                        <SelectItem value="all">All Grades</SelectItem>
+                        <SelectItem value="all">All Classes</SelectItem>
                         {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}
                     </SelectContent>
                 </Select>
@@ -186,10 +186,10 @@ export function SyllabusClient({ initialSyllabus, classes, subjects, academicYea
 
                         <div className="grid grid-cols-2 gap-4">
                             <div className="space-y-2">
-                                <Label>Grade Level</Label>
+                                <Label>Class Level</Label>
                                 <Select value={formClassId} onValueChange={setFormClassId} required>
                                     <SelectTrigger>
-                                        <SelectValue placeholder="Select Grade" />
+                                        <SelectValue placeholder="Select Class" />
                                     </SelectTrigger>
                                     <SelectContent>
                                         {classes.map(c => <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>)}

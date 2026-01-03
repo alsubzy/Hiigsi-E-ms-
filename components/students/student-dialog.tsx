@@ -10,6 +10,7 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { Student } from "@/lib/types"
 import { createStudent, updateStudent } from "@/app/actions/students"
+import { getClasses, type ClassRange, getSections, type Section } from "@/app/actions/classes"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 
@@ -22,6 +23,9 @@ interface StudentDialogProps {
 export function StudentDialog({ open, onOpenChange, student }: StudentDialogProps) {
   const router = useRouter()
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [classes, setClasses] = useState<ClassRange[]>([])
+  const [sections, setSections] = useState<Section[]>([])
+  const [selectedClassId, setSelectedClassId] = useState<string>("")
   const [formData, setFormData] = useState({
     roll_number: "",
     first_name: "",
@@ -31,8 +35,7 @@ export function StudentDialog({ open, onOpenChange, student }: StudentDialogProp
     email: "",
     phone: "",
     address: "",
-    grade: "1",
-    section: "A",
+    section_id: "",
     admission_date: new Date().toISOString().split("T")[0],
     parent_name: "",
     parent_phone: "",
@@ -41,8 +44,37 @@ export function StudentDialog({ open, onOpenChange, student }: StudentDialogProp
     status: "active" as "active" | "inactive",
   })
 
+  // Fetch classes when dialog opens
+  useEffect(() => {
+    if (open) {
+      getClasses().then((response) => {
+        if (response.success) {
+          setClasses(response.data)
+        }
+      })
+    }
+  }, [open])
+
+  // Fetch sections when class is selected
+  useEffect(() => {
+    if (selectedClassId) {
+      getSections().then((response) => {
+        if (response.success) {
+          const classSections = response.data.filter(s => s.class_id === selectedClassId && s.status === 'active')
+          setSections(classSections)
+        }
+      })
+    } else {
+      setSections([])
+    }
+  }, [selectedClassId])
+
   useEffect(() => {
     if (student) {
+      // Set class ID from student's section
+      const classId = student.section?.class_id || ""
+      setSelectedClassId(classId)
+
       setFormData({
         roll_number: student.roll_number,
         first_name: student.first_name,
@@ -52,8 +84,7 @@ export function StudentDialog({ open, onOpenChange, student }: StudentDialogProp
         email: student.email || "",
         phone: student.phone || "",
         address: student.address || "",
-        grade: student.grade,
-        section: student.section,
+        section_id: student.section_id || "",
         admission_date: student.admission_date,
         parent_name: student.parent_name,
         parent_phone: student.parent_phone,
@@ -62,6 +93,7 @@ export function StudentDialog({ open, onOpenChange, student }: StudentDialogProp
         status: student.status,
       })
     } else {
+      setSelectedClassId("")
       setFormData({
         roll_number: "",
         first_name: "",
@@ -71,8 +103,7 @@ export function StudentDialog({ open, onOpenChange, student }: StudentDialogProp
         email: "",
         phone: "",
         address: "",
-        grade: "1",
-        section: "A",
+        section_id: "",
         admission_date: new Date().toISOString().split("T")[0],
         parent_name: "",
         parent_phone: "",
@@ -189,32 +220,64 @@ export function StudentDialog({ open, onOpenChange, student }: StudentDialogProp
               <Input id="phone" value={formData.phone} onChange={(e) => handleChange("phone", e.target.value)} />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="grade">Grade *</Label>
-              <Select value={formData.grade} onValueChange={(value) => handleChange("grade", value)}>
-                <SelectTrigger id="grade">
-                  <SelectValue />
+              <Label htmlFor="class_select">Class *</Label>
+              <Select
+                value={selectedClassId}
+                onValueChange={(value) => {
+                  setSelectedClassId(value)
+                  setFormData({ ...formData, section_id: "" }) // Reset section when class changes
+                }}
+                required
+              >
+                <SelectTrigger id="class_select">
+                  <SelectValue placeholder={classes.length === 0 ? "No classes available" : "Select a class"} />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="1">Grade 1</SelectItem>
-                  <SelectItem value="2">Grade 2</SelectItem>
-                  <SelectItem value="3">Grade 3</SelectItem>
-                  <SelectItem value="4">Grade 4</SelectItem>
-                  <SelectItem value="5">Grade 5</SelectItem>
+                  {classes
+                    .filter(c => c.status === "active")
+                    .map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
                 </SelectContent>
               </Select>
+              {classes.length === 0 && (
+                <p className="text-xs text-red-500">
+                  No active classes found. Please create a class first.
+                </p>
+              )}
             </div>
             <div className="space-y-2">
-              <Label htmlFor="section">Section *</Label>
-              <Select value={formData.section} onValueChange={(value) => handleChange("section", value)}>
-                <SelectTrigger id="section">
-                  <SelectValue />
+              <Label htmlFor="section_id">Section *</Label>
+              <Select
+                value={formData.section_id}
+                onValueChange={(value) => handleChange("section_id", value)}
+                disabled={!selectedClassId}
+                required
+              >
+                <SelectTrigger id="section_id">
+                  <SelectValue placeholder={
+                    !selectedClassId
+                      ? "Select a class first"
+                      : sections.length === 0
+                        ? "No sections available"
+                        : "Select a section"
+                  } />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="A">A</SelectItem>
-                  <SelectItem value="B">B</SelectItem>
-                  <SelectItem value="C">C</SelectItem>
+                  {sections.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      Section {s.name}
+                    </SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
+              {selectedClassId && sections.length === 0 && (
+                <p className="text-xs text-red-500">
+                  No sections found for this class. Please create a section first.
+                </p>
+              )}
             </div>
             <div className="space-y-2">
               <Label htmlFor="admission_date">Admission Date *</Label>

@@ -93,7 +93,7 @@ export function ReceiptDialog({ paymentId, trigger }: ReceiptDialogProps) {
                                     <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">Detailed To</h4>
                                     <p className="text-lg font-bold text-slate-900">{data.students?.first_name} {data.students?.last_name}</p>
                                     <p className="text-slate-600 text-sm">ID: {data.students?.student_id || data.student_id?.split('-')[0]}</p>
-                                    <p className="text-slate-600 text-sm">Grade: {data.students?.grade}</p>
+                                    <p className="text-slate-600 text-sm">Class: {data.students?.class_name}</p>
                                 </div>
                                 <div className="text-right">
                                     <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">Payment Details</h4>
