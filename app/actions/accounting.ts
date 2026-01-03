@@ -36,6 +36,49 @@ export async function createAccount(data: {
   revalidatePath("/dashboard/accounting/coa")
 }
 
+export async function updateAccount(id: string, data: {
+  name: string
+  code: string
+  type: "asset" | "liability" | "equity" | "income" | "expense"
+  parent_id?: string | null
+  description?: string | null
+  is_active?: boolean
+}) {
+  const supabase = await createClient()
+  const { error } = await supabase.from("accounts").update(data).eq("id", id)
+  if (error) throw new Error(error.message)
+  revalidatePath("/dashboard/accounting/coa")
+}
+
+export async function deleteAccount(id: string) {
+  const supabase = await createClient()
+
+  // 1. Check for journal entries (dependencies)
+  const { count, error: countError } = await supabase
+    .from("journal_entries")
+    .select("*", { count: 'exact', head: true })
+    .eq("account_id", id)
+
+  if (countError) throw new Error(countError.message)
+  if (count && count > 0) {
+    throw new Error("Cannot delete account with existing transactions. Deactivate it instead.")
+  }
+
+  // 2. Check for child accounts
+  const { count: childCount } = await supabase
+    .from("accounts")
+    .select("*", { count: 'exact', head: true })
+    .eq("parent_id", id)
+
+  if (childCount && childCount > 0) {
+    throw new Error("Cannot delete account with sub-accounts.")
+  }
+
+  const { error } = await supabase.from("accounts").delete().eq("id", id)
+  if (error) throw new Error(error.message)
+  revalidatePath("/dashboard/accounting/coa")
+}
+
 /**
  * GENERAL LEDGER ENGINE
  * This is the core function for double-entry bookkeeping.
@@ -170,7 +213,133 @@ export async function getFeeCategories() {
   const supabase = await createClient()
   const { data, error } = await supabase.from("fee_categories").select("*, accounts(*)")
   if (error) throw new Error(error.message)
+
+  // Auto-populate defaults if empty
+  if (data.length === 0) {
+    const defaults = [
+      { name: "Tuition", description: "Standard tuition fees" },
+      { name: "Transport", description: "Bussing and transport" },
+      { name: "Registration", description: "One-time enrollment fee" }
+    ]
+    const { data: created, error: createError } = await supabase.from("fee_categories").insert(defaults).select()
+    if (createError) throw new Error(createError.message)
+    return created
+  }
+
   return data
+}
+
+export async function getAcademicYears() {
+  const supabase = await createClient()
+  const { data, error } = await supabase.from("academic_years").select("*").order("name", { ascending: false })
+  if (error) throw new Error(error.message)
+
+  // Auto-populate defaults if empty
+  if (data.length === 0) {
+    const currentYear = {
+      name: "2025-2026",
+      start_date: "2025-01-01",
+      end_date: "2025-12-31",
+      is_current: true,
+      status: "active"
+    }
+    const { data: created, error: createError } = await supabase.from("academic_years").insert(currentYear).select().single()
+    if (createError) throw new Error(createError.message)
+    return [created]
+  }
+
+  return data
+}
+
+export async function getTerms(academicYearId?: string) {
+  const supabase = await createClient()
+
+  // If no year ID provided, try to get current year first
+  let yearId = academicYearId
+  if (!yearId) {
+    const { data: currentYear } = await supabase.from("academic_years").select("id").eq("is_current", true).single()
+    yearId = currentYear?.id
+  }
+
+  if (!yearId) return []
+
+  let query = supabase.from("terms").select("*").eq("academic_year_id", yearId)
+  const { data, error } = await query.order("name", { ascending: true })
+  if (error) throw new Error(error.message)
+
+  // Auto-populate defaults if empty
+  if (data.length === 0) {
+    const defaults = [
+      { academic_year_id: yearId, name: "Term 1", start_date: "2025-01-01", end_date: "2025-04-30", is_current: true },
+      { academic_year_id: yearId, name: "Term 2", start_date: "2025-05-01", end_date: "2025-08-30", is_current: false },
+      { academic_year_id: yearId, name: "Term 3", start_date: "2025-09-01", end_date: "2025-12-31", is_current: false }
+    ]
+    const { data: created, error: createError } = await supabase.from("terms").insert(defaults).select()
+    if (createError) throw new Error(createError.message)
+    return created
+  }
+
+  return data
+}
+
+export async function getFeeStructures() {
+  const supabase = await createClient()
+  const { data, error } = await supabase
+    .from("fee_structures")
+    .select("*, fee_categories(*), academic_years(*), terms(*)")
+    .order("created_at", { ascending: false })
+
+  if (error) throw new Error(error.message)
+  return data
+}
+
+export async function createFeeStructure(data: {
+  fee_category_id: string
+  academic_year_id: string
+  term_id: string
+  grade: string
+  amount: number
+  is_mandatory?: boolean
+  due_date?: string
+}) {
+  const supabase = await createClient()
+  const { error } = await supabase.from("fee_structures").insert(data)
+  if (error) throw new Error(error.message)
+  revalidatePath("/dashboard/accounting/structures")
+}
+
+export async function updateFeeStructure(id: string, data: {
+  fee_category_id: string
+  academic_year_id: string
+  term_id: string
+  grade: string
+  amount: number
+  is_mandatory?: boolean
+  due_date?: string
+}) {
+  const supabase = await createClient()
+  const { error } = await supabase.from("fee_structures").update(data).eq("id", id)
+  if (error) throw new Error(error.message)
+  revalidatePath("/dashboard/accounting/structures")
+}
+
+export async function deleteFeeStructure(id: string) {
+  const supabase = await createClient()
+
+  // Check for dependencies (student fees)
+  const { count, error: countError } = await supabase
+    .from("student_fees")
+    .select("*", { count: 'exact', head: true })
+    .eq("fee_structure_id", id)
+
+  if (countError) throw new Error(countError.message)
+  if (count && count > 0) {
+    throw new Error("Cannot delete fee structure that is assigned to students. Deactivate it instead.")
+  }
+
+  const { error } = await supabase.from("fee_structures").delete().eq("id", id)
+  if (error) throw new Error(error.message)
+  revalidatePath("/dashboard/accounting/structures")
 }
 
 export async function getStudentFees(studentId?: string) {
