@@ -31,7 +31,9 @@ export default function InvoiceDetailPage() {
           students (
             first_name,
             last_name,
-            grade,
+            classes (
+            name
+          ),
             id
           ),
           invoice_items (
@@ -126,7 +128,7 @@ export default function InvoiceDetailPage() {
                             <div className="font-black text-slate-400 text-xs uppercase tracking-widest border-b border-slate-100 pb-2">Billed To</div>
                             <div>
                                 <div className="text-xl font-black text-slate-900">{invoice.students?.full_name}</div>
-                                <div className="font-bold text-primary mt-1">Grade: {invoice.students?.grade}</div>
+                                <div className="font-bold text-primary mt-1">Class: {invoice.students?.classes?.name}</div>
                                 <div className="text-xs text-slate-400 font-mono mt-2">ID: {invoice.students?.id}</div>
                             </div>
                         </div>

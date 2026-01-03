@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from "react"
 import { getFeeStructures, createFeeStructure, updateFeeStructure, deleteFeeStructure, getFeeCategories, getAcademicYears, getTerms } from "@/app/actions/accounting"
+import { getClasses } from "@/app/actions/classes"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -39,6 +40,7 @@ import {
 } from "@/components/ui/alert-dialog"
 
 export default function FeeStructuresPage() {
+    const [classes, setClasses] = useState<any[]>([])
     const [structures, setStructures] = useState<any[]>([])
     const [categories, setCategories] = useState<any[]>([])
     const [academicYears, setAcademicYears] = useState<any[]>([])
@@ -67,29 +69,47 @@ export default function FeeStructuresPage() {
 
     async function fetchData() {
         try {
-            const [structData, catData, yearData] = await Promise.all([
+            const [structData, catData, yearData, classRes] = await Promise.all([
                 getFeeStructures(),
                 getFeeCategories(),
-                getAcademicYears()
+                getAcademicYears(),
+                getClasses()
             ])
             setStructures(structData)
             setCategories(catData)
             setAcademicYears(yearData)
+            if (classRes.success && classRes.data) {
+                setClasses(classRes.data)
+            }
 
-            // If there's academic years, try to find current or use first one
-            const currentYear = yearData.find((y: any) => y.is_current) || yearData[0]
+            if (yearData.length === 0) {
+                toast.error("No Academic Years found. Please create one in Settings.", { duration: 5000 })
+            }
+
+            // Find current year (support both is_current and is_active due to schema differences)
+            const currentYear = yearData.find((y: any) => y.is_current || y.is_active) || yearData[0]
+
             if (currentYear) {
                 // If we don't have a year selected in formData, default to current one
                 if (!formData.academic_year_id) {
                     setFormData(prev => ({ ...prev, academic_year_id: currentYear.id }))
                 }
-                const termData = await getTerms(currentYear.id)
-                setTerms(termData)
-                // If we don't have a term selected, default to first or current one
-                if (!formData.term_id && termData.length > 0) {
-                    const currentTerm = termData.find((t: any) => t.is_current) || termData[0]
-                    setFormData(prev => ({ ...prev, term_id: currentTerm.id }))
+
+                try {
+                    const termData = await getTerms(currentYear.id)
+                    setTerms(termData)
+                    // If we don't have a term selected, default to first or current one
+                    if (!formData.term_id && termData.length > 0) {
+                        const currentTerm = termData.find((t: any) => t.is_current || t.is_active) || termData[0]
+                        setFormData(prev => ({ ...prev, term_id: currentTerm.id }))
+                    }
+                } catch (termError) {
+                    console.error("Failed to fetch terms", termError)
+                    // Don't block the whole page if terms fail
                 }
+            } else {
+                // Should not happen if yearData has items, but just in case
+                if (yearData.length > 0) toast.warning("No active academic year found.")
             }
 
             // Default category if none selected
@@ -97,7 +117,8 @@ export default function FeeStructuresPage() {
                 setFormData(prev => ({ ...prev, fee_category_id: catData[0].id }))
             }
         } catch (error: any) {
-            toast.error(error.message)
+            console.error("Fetch Data Error:", error)
+            toast.error("Failed to load data: " + error.message)
         } finally {
             setIsLoading(false)
         }
@@ -141,7 +162,8 @@ export default function FeeStructuresPage() {
             const termData = await getTerms(yearId)
             setTerms(termData)
             if (termData.length > 0) {
-                const currentTerm = termData.find((t: any) => t.is_current) || termData[0]
+                // Auto-select active term if possible
+                const currentTerm = termData.find((t: any) => t.is_current || t.is_active) || termData[0]
                 setFormData(prev => ({ ...prev, term_id: currentTerm.id }))
             }
         } catch (error: any) {
@@ -160,9 +182,13 @@ export default function FeeStructuresPage() {
         setIsSubmitting(true)
 
         const payload = {
-            ...formData,
+            fee_category_id: formData.fee_category_id,
+            academic_year_id: formData.academic_year_id,
+            term_id: formData.term_id,
+            class_name: formData.grade, // Map grade selection to class_name
             amount: parseFloat(formData.amount),
-            due_date: formData.due_date || undefined
+            due_date: formData.due_date || undefined,
+            is_mandatory: formData.is_mandatory
         }
 
         try {
@@ -204,7 +230,7 @@ export default function FeeStructuresPage() {
         s.grade?.toLowerCase().includes(searchTerm.toLowerCase())
     )
 
-    const grades = ["Grade 1", "Grade 2", "Grade 3", "Grade 4", "Grade 5", "Grade 6", "Grade 7", "Grade 8", "Form 1", "Form 2", "Form 3", "Form 4"]
+
 
     return (
         <div className="space-y-6">
@@ -244,9 +270,16 @@ export default function FeeStructuresPage() {
                                                     <SelectValue placeholder="Select Year" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    {academicYears.map(y => (
-                                                        <SelectItem key={y.id} value={y.id}>{y.name}</SelectItem>
-                                                    ))}
+                                                    {academicYears.length === 0 ? (
+                                                        <div className="p-2 text-sm text-red-500 font-medium text-center">
+                                                            No Academic Years Found.<br />
+                                                            <span className="text-xs text-gray-400">Please create one in Settings.</span>
+                                                        </div>
+                                                    ) : (
+                                                        academicYears.map(y => (
+                                                            <SelectItem key={y.id} value={y.id}>{y.name}</SelectItem>
+                                                        ))
+                                                    )}
                                                 </SelectContent>
                                             </Select>
                                         </div>
@@ -261,9 +294,16 @@ export default function FeeStructuresPage() {
                                                     <SelectValue placeholder="Select Term" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    {terms.map(t => (
-                                                        <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
-                                                    ))}
+                                                    {terms.length === 0 ? (
+                                                        <div className="p-2 text-sm text-amber-500 font-medium text-center">
+                                                            No Terms Found for Year.<br />
+                                                            <span className="text-xs text-gray-400">Please ensure year has terms.</span>
+                                                        </div>
+                                                    ) : (
+                                                        terms.map(t => (
+                                                            <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>
+                                                        ))
+                                                    )}
                                                 </SelectContent>
                                             </Select>
                                         </div>
@@ -297,8 +337,8 @@ export default function FeeStructuresPage() {
                                                     <SelectValue placeholder="Select Grade" />
                                                 </SelectTrigger>
                                                 <SelectContent>
-                                                    {grades.map(g => (
-                                                        <SelectItem key={g} value={g}>{g}</SelectItem>
+                                                    {classes.map(c => (
+                                                        <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
                                                     ))}
                                                 </SelectContent>
                                             </Select>

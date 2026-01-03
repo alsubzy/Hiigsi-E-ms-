@@ -37,7 +37,7 @@ export async function getAttendanceReport(startDate?: string, endDate?: string) 
 
   let query = supabase.from("attendance").select(`
     *,
-    student:students(name, class_name, section)
+    student:students(name, classes(name), sections(name))
   `)
 
   if (startDate) {
@@ -90,7 +90,7 @@ export async function getGradingReport(grade?: string, term?: string) {
 
   let query = supabase.from("class_marks").select(`
     *,
-    student:students(name, roll_number, class_name, section)
+    student:students(name, roll_number, classes(name), sections(name))
   `)
 
   if (grade) {
@@ -147,7 +147,7 @@ export async function getFinancialReport(startDate?: string, endDate?: string) {
 
   let query = supabase.from("payments").select(`
     *,
-    student:students(name, roll_number, class_name, section)
+    student:students(name, roll_number, classes(name), sections(name))
   `)
 
   if (startDate) {

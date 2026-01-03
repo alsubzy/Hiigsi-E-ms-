@@ -68,7 +68,9 @@ export function BulkFeeAssignment({ onSuccess }: { onSuccess: () => void }) {
     const selectedStructure = feeStructures.find(f => f.id === selectedStructureId)
 
     const filteredStudents = students.filter(s => {
-        const matchesClass = selectedStructure ? s.class_name === selectedStructure.class_name : true
+        // Safe access to student class name via section relation
+        const studentClassName = s.section?.class?.name || (s.classes as any)?.name
+        const matchesClass = selectedStructure ? studentClassName === selectedStructure.class_name : true
         const matchesSearch = s.first_name?.toLowerCase().includes(studentSearch.toLowerCase()) ||
             s.last_name?.toLowerCase().includes(studentSearch.toLowerCase())
         return matchesClass && matchesSearch

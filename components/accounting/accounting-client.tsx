@@ -15,7 +15,7 @@ interface Student {
   id: string
   name: string
   roll_number: string
-  grade: string
+  class_name: string
   section: string
 }
 
@@ -32,7 +32,7 @@ interface Payment {
   student: {
     name: string
     roll_number: string
-    grade: string
+    class_name: string
     section: string
   }
 }
@@ -221,7 +221,7 @@ export function AccountingClient({ initialStats, initialStudents, initialPayment
                   <TableRow>
                     <TableHead>Roll No.</TableHead>
                     <TableHead>Student Name</TableHead>
-                    <TableHead>Grade</TableHead>
+                    <TableHead>Class</TableHead>
                     <TableHead className="text-right">Action</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -232,7 +232,7 @@ export function AccountingClient({ initialStats, initialStudents, initialPayment
                         <TableCell className="font-medium">{student.roll_number}</TableCell>
                         <TableCell>{student.name}</TableCell>
                         <TableCell>
-                          {student.grade}
+                          {student.class_name}
                           {student.section}
                         </TableCell>
                         <TableCell className="text-right">

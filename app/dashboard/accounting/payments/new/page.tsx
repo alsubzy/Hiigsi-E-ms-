@@ -40,11 +40,12 @@ export default function NewPaymentPage() {
 
     async function fetchStudents() {
         const supabase = createClient()
-        const { data } = await supabase.from("students").select("id, first_name, last_name, grade").eq("status", "active")
+        const { data } = await supabase.from("students").select("id, first_name, last_name, classes(name)").eq("status", "active")
 
         const formattedData = data?.map(student => ({
             ...student,
-            full_name: `${student.first_name} ${student.last_name}`
+            full_name: `${student.first_name} ${student.last_name}`,
+            class_name: Array.isArray(student.classes) ? student.classes[0]?.name : (student.classes as any)?.name || "N/A"
         })) || []
 
         setStudents(formattedData)
@@ -138,7 +139,7 @@ export default function NewPaymentPage() {
                             >
                                 <option value="" disabled>Search or select a student...</option>
                                 {students.map(s => (
-                                    <option key={s.id} value={s.id}>{s.full_name} — Grade {s.grade}</option>
+                                    <option key={s.id} value={s.id}>{s.full_name} — Class {s.class_name}</option>
                                 ))}
                             </select>
                         </div>
@@ -159,8 +160,8 @@ export default function NewPaymentPage() {
                                                 key={inv.id}
                                                 onClick={() => handleInvoiceChange(inv.id)}
                                                 className={`p-4 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${selectedInvoice?.id === inv.id
-                                                        ? "border-emerald-500 bg-emerald-50 ring-1 ring-emerald-500"
-                                                        : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
+                                                    ? "border-emerald-500 bg-emerald-50 ring-1 ring-emerald-500"
+                                                    : "border-gray-200 bg-white hover:border-gray-300 hover:shadow-sm"
                                                     }`}
                                             >
                                                 <div>

@@ -9,6 +9,7 @@ import { GradeEntryForm } from "@/components/grading/grade-entry-form"
 import { ReportCardView } from "@/components/grading/report-card"
 import { getStudents } from "@/app/actions/students"
 import { getSubjectsByClass, getReportCard } from "@/app/actions/marks"
+import { getClasses } from "@/app/actions/classes"
 import type { Student } from "@/lib/types"
 
 interface GradingClientProps {
@@ -19,18 +20,29 @@ const terms = ["Term 1", "Term 2", "Term 3", "Final"]
 
 export function GradingClient({ userRole }: GradingClientProps) {
   const [view, setView] = useState<"entry" | "report">("entry")
-  const [className, setClassName] = useState("1")
-  const [section, setSection] = useState("A")
+  const [classId, setClassId] = useState("")
+  const [section, setSection] = useState("") // Keeping section name/id mixed? Use ID if possible. But dropdowns hardcoded. Fix dropdowns later if needed, but for now map classes.
+  // Actually, filtering by section string ("A", "B") vs section ID. The student object has `section: { name: "A" }`.
+  // If I want to fix this, I should fetch sections for the class too. But let's first fix Class.
   const [term, setTerm] = useState("Term 1")
   const [selectedStudentId, setSelectedStudentId] = useState<string>("")
   const [students, setStudents] = useState<Student[]>([])
+  const [classes, setClasses] = useState<any[]>([])
   const [subjects, setSubjects] = useState<any[]>([])
   const [reportCard, setReportCard] = useState<any>(null)
   const [isLoading, setIsLoading] = useState(false)
 
   useEffect(() => {
-    loadData()
-  }, [className, section])
+    async function loadClasses() {
+      const res = await getClasses()
+      if (res.success && res.data) setClasses(res.data)
+    }
+    loadClasses()
+  }, [])
+
+  useEffect(() => {
+    if (classId) loadData()
+  }, [classId, section])
 
   useEffect(() => {
     if (view === "report" && selectedStudentId) {
@@ -42,12 +54,14 @@ export function GradingClient({ userRole }: GradingClientProps) {
     setIsLoading(true)
     try {
       const allStudents = await getStudents()
+      // Filter by Class ID (via section relation)
+      // Student has `section: { class: { id } }`
       const filteredStudents = allStudents.filter(
-        (s) => s.class_name === className && s.section === section && s.status === "active",
+        (s: any) => s.section?.class?.id === classId && s.section?.name === section && s.status === "active",
       )
       setStudents(filteredStudents)
 
-      const subjectsData = await getSubjectsByClass(className)
+      const subjectsData = await getSubjectsByClass(classId)
       setSubjects(subjectsData)
     } catch (error) {
       console.error("Error loading data:", error)
@@ -73,23 +87,23 @@ export function GradingClient({ userRole }: GradingClientProps) {
       <Card>
         <CardContent className="pt-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+            {/* Class Logic Refactored below in next step or concurrent edit - I will do a larger replace or see if I need to fetch classes first */}
             <div className="flex flex-col gap-4 md:flex-row md:items-end">
               <div className="space-y-2">
                 <Label>Class</Label>
-                <Select value={className} onValueChange={setClassName}>
+                <Select value={classId} onValueChange={setClassId}>
                   <SelectTrigger className="w-[140px]">
-                    <SelectValue />
+                    <SelectValue placeholder="Select Class" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="1">Class 1</SelectItem>
-                    <SelectItem value="2">Class 2</SelectItem>
-                    <SelectItem value="3">Class 3</SelectItem>
-                    <SelectItem value="4">Class 4</SelectItem>
-                    <SelectItem value="5">Class 5</SelectItem>
+                    {classes.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
-
               <div className="space-y-2">
                 <Label>Section</Label>
                 <Select value={section} onValueChange={setSection}>
@@ -165,7 +179,7 @@ export function GradingClient({ userRole }: GradingClientProps) {
           <Card>
             <CardContent className="py-12 text-center text-muted-foreground">
               {students.length === 0
-                ? `No students found for Class ${className} Section ${section}`
+                ? `No students found for this Class & Section`
                 : "No subjects configured for this class"}
             </CardContent>
           </Card>

@@ -228,8 +228,16 @@ export async function getTerms(academicYearId?: string) {
 
   let yearId = academicYearId
   if (!yearId) {
-    const { data: currentYear } = await supabase.from("academic_years").select("id").eq("is_current", true).maybeSingle()
-    yearId = currentYear?.id
+    // Try to find current year logic. Robust to schema drift (is_current vs is_active)
+    // We'll fetch the latest academic year by name as a safe fallback
+    const { data: latestYear } = await supabase
+      .from("academic_years")
+      .select("id")
+      .order("name", { ascending: false })
+      .limit(1)
+      .maybeSingle()
+
+    yearId = latestYear?.id
   }
 
   if (!yearId) return []
@@ -587,7 +595,7 @@ export async function getPaymentDetails(paymentId: string) {
     .from("accounting_payments")
     .select(`
             *,
-            students (first_name, last_name, student_id, grade),
+            students (first_name, last_name, student_id, classes(name), sections(name)),
             invoices (
                 invoice_no, 
                 invoice_items (

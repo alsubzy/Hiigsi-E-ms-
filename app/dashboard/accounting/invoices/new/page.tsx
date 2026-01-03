@@ -51,14 +51,15 @@ export default function NewInvoicePage() {
             const supabase = createClient()
             const { data: student } = await supabase
                 .from("students")
-                .select("id, first_name, last_name, grade")
+                .select("id, first_name, last_name, classes(name)")
                 .eq("id", studentId)
                 .single()
 
             if (student) {
                 setSelectedStudent({
                     ...student,
-                    full_name: `${student.first_name} ${student.last_name}`
+                    full_name: `${student.first_name} ${student.last_name}`,
+                    class_name: Array.isArray(student.classes) ? student.classes[0]?.name : (student.classes as any)?.name || "N/A"
                 })
             }
 
@@ -142,7 +143,7 @@ export default function NewInvoicePage() {
                                 </div>
                                 <div>
                                     <div className="font-bold text-gray-900">{selectedStudent.full_name}</div>
-                                    <div className="text-xs font-semibold text-blue-600 uppercase">Grade {selectedStudent.grade}</div>
+                                    <div className="text-xs font-semibold text-blue-600 uppercase">Class {selectedStudent.class_name}</div>
                                 </div>
                             </div>
                         )}
