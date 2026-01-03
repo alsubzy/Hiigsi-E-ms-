@@ -18,33 +18,37 @@ interface TeacherViewProps {
     data: TeacherDashboardData
 }
 
+import { useLanguage } from "@/components/language-provider"
+
 export function TeacherView({ data }: TeacherViewProps) {
+    const { t } = useLanguage()
+
     return (
         <div className="space-y-6">
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <StatsCard
-                    title="My Classes"
+                    title={t("teachers.schedule")}
                     value={data.stats.classes}
                     icon={BookOpen}
                     description="Active classes"
                     iconClassName="bg-blue-100 text-blue-600 dark:bg-blue-900/20"
                 />
                 <StatsCard
-                    title="My Students"
+                    title={t("students.students")}
                     value={data.stats.students}
                     icon={Users}
                     description="Total students"
                     iconClassName="bg-purple-100 text-purple-600 dark:bg-purple-900/20"
                 />
                 <StatsCard
-                    title="Teaching Hours"
+                    title={t("teachers.schedule")} // or hours
                     value={`${data.stats.hoursToday}h`}
                     icon={Clock}
                     description="Scheduled today"
                     iconClassName="bg-orange-100 text-orange-600 dark:bg-orange-900/20"
                 />
                 <StatsCard
-                    title="Class Attendance"
+                    title={t("students.attendance")}
                     value={`${data.stats.attendanceRate}%`}
                     icon={ClipboardCheck}
                     trend={{ value: 1.2, label: "vs avg", positive: true }}

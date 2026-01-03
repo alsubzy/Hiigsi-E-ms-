@@ -3,6 +3,7 @@ import { createClient } from "@/lib/supabase/server"
 import { Header } from "@/components/dashboard/header"
 import { AdminView, type AdminDashboardData } from "@/components/dashboard/views/admin-view"
 import { TeacherView, type TeacherDashboardData } from "@/components/dashboard/views/teacher-view"
+import { getTranslations } from "@/lib/i18n-server"
 
 export default async function DashboardPage() {
   const supabase = await createClient()
@@ -107,9 +108,11 @@ export default async function DashboardPage() {
       ]
     }
 
+    const t = await getTranslations()
+
     return (
       <>
-        <Header title={`Welcome back, ${profile.full_name}`} description="Here's what's happening today." />
+        <Header title={`${t.welcomeBack}, ${profile.full_name}`} description={t.loginSubtitle} />
         <div className="p-6">
           <AdminView data={adminData} />
         </div>

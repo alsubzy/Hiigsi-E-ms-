@@ -49,75 +49,82 @@ interface NavGroup {
   subItems?: NavSubItem[]
 }
 
-const navGroups: NavGroup[] = [
-  {
-    title: "Dashboard",
-    href: "/dashboard",
-    icon: LayoutDashboard,
-    roles: ["admin", "teacher", "accountant", "staff"],
-  },
-  {
-    title: "Users & Personnel",
-    icon: Shield,
-    roles: ["admin", "staff"],
-    subItems: [
-      { title: "User Management", href: "/dashboard/users", roles: ["admin"] },
-      { title: "Teachers", href: "/dashboard/teachers", roles: ["admin", "staff"] },
-      { title: "Staff Directory", href: "/dashboard/staff", roles: ["admin"] },
-    ],
-  },
-  {
-    title: "Academic",
-    icon: BookOpen,
-    roles: ["admin", "teacher"],
-    subItems: [
-      { title: "Calendar", href: "/dashboard/academic/calendar", roles: ["admin"] },
-      { title: "Classes", href: "/dashboard/academic/classes", roles: ["admin"] },
-      { title: "Subjects", href: "/dashboard/academic/subjects", roles: ["admin"] },
-      { title: "Timetable", href: "/dashboard/academic/timetable", roles: ["admin", "teacher"] },
-      { title: "Syllabus", href: "/dashboard/academic/syllabus", roles: ["admin", "teacher"] },
-    ],
-  },
-  {
-    title: "Students",
-    icon: GraduationCap,
-    roles: ["admin", "teacher", "staff"],
-    subItems: [
-      { title: "All Students", href: "/dashboard/students", roles: ["admin", "teacher", "staff"] },
-      { title: "Attendance", href: "/dashboard/attendance", roles: ["admin", "teacher", "staff"] },
-      { title: "Grades & Exams", href: "/dashboard/grading", roles: ["admin", "teacher"] },
-    ],
-  },
-  {
-    title: "Finance",
-    icon: DollarSign,
-    roles: ["admin", "accountant", "teacher", "staff"],
-    subItems: [
-      { title: "Overview", href: "/dashboard/accounting", roles: ["admin", "accountant", "teacher", "staff"] },
-      { title: "Fees", href: "/dashboard/accounting/fees", roles: ["admin", "accountant", "teacher", "staff"] },
-      { title: "Invoices", href: "/dashboard/accounting/invoices", roles: ["admin", "accountant", "teacher", "staff"] },
-      { title: "Payments", href: "/dashboard/accounting/payments", roles: ["admin", "accountant", "teacher", "staff"] },
-      { title: "Expenses", href: "/dashboard/accounting/expenses", roles: ["admin", "accountant", "teacher", "staff"] },
-    ],
-  },
-  {
-    title: "Reports",
-    href: "/dashboard/reports",
-    icon: BarChart3,
-    roles: ["admin", "accountant"],
-  },
-  {
-    title: "Settings",
-    href: "/dashboard/settings",
-    icon: Settings,
-    roles: ["admin", "teacher", "accountant", "staff"],
-  },
-]
+import { useLanguage } from "@/components/language-provider"
+
+// ... imports remain same ...
+
+// Remove static navGroups definition
 
 export function Sidebar({ user, onClose }: SidebarProps) {
   const pathname = usePathname()
   const router = useRouter()
   const [openGroups, setOpenGroups] = useState<string[]>([])
+  const { t } = useLanguage()
+
+  const navGroups: NavGroup[] = [
+    {
+      title: t("nav.dashboard"),
+      href: "/dashboard",
+      icon: LayoutDashboard,
+      roles: ["admin", "teacher", "accountant", "staff"],
+    },
+    {
+      title: t("nav.users"),
+      icon: Shield,
+      roles: ["admin", "staff"],
+      subItems: [
+        { title: t("nav.users"), href: "/dashboard/users", roles: ["admin"] },
+        { title: t("nav.teachers"), href: "/dashboard/teachers", roles: ["admin", "staff"] },
+        { title: t("nav.staff"), href: "/dashboard/staff", roles: ["admin"] },
+      ],
+    },
+    {
+      title: "Academic", // Add to translations later if missing
+      icon: BookOpen,
+      roles: ["admin", "teacher"],
+      subItems: [
+        { title: t("sidebar.schedule"), href: "/dashboard/academic/calendar", roles: ["admin"] },
+        { title: "Classes", href: "/dashboard/academic/classes", roles: ["admin"] },
+        { title: "Subjects", href: "/dashboard/academic/subjects", roles: ["admin"] },
+        { title: t("sidebar.schedule"), href: "/dashboard/academic/timetable", roles: ["admin", "teacher"] },
+        { title: "Syllabus", href: "/dashboard/academic/syllabus", roles: ["admin", "teacher"] },
+      ],
+    },
+    {
+      title: t("nav.students"),
+      icon: GraduationCap,
+      roles: ["admin", "teacher", "staff"],
+      subItems: [
+        { title: t("sidebar.allStudents"), href: "/dashboard/students", roles: ["admin", "teacher", "staff"] },
+        { title: t("sidebar.attendance"), href: "/dashboard/attendance", roles: ["admin", "teacher", "staff"] },
+        { title: t("sidebar.grades"), href: "/dashboard/grading", roles: ["admin", "teacher"] },
+      ],
+    },
+    {
+      title: t("nav.accounting"),
+      icon: DollarSign,
+      roles: ["admin", "accountant", "teacher", "staff"],
+      subItems: [
+        { title: t("sidebar.overview"), href: "/dashboard/accounting", roles: ["admin", "accountant", "teacher", "staff"] },
+        { title: t("accounting.fees"), href: "/dashboard/accounting/fees", roles: ["admin", "accountant", "teacher", "staff"] },
+        { title: t("accounting.invoices"), href: "/dashboard/accounting/invoices", roles: ["admin", "accountant", "teacher", "staff"] },
+        { title: t("accounting.payments"), href: "/dashboard/accounting/payments", roles: ["admin", "accountant", "teacher", "staff"] },
+        { title: t("accounting.expenses"), href: "/dashboard/accounting/expenses", roles: ["admin", "accountant", "teacher", "staff"] },
+      ],
+    },
+    {
+      title: t("nav.reports"),
+      href: "/dashboard/reports",
+      icon: BarChart3,
+      roles: ["admin", "accountant"],
+    },
+    {
+      title: t("nav.settings"),
+      href: "/dashboard/settings",
+      icon: Settings,
+      roles: ["admin", "teacher", "accountant", "staff"],
+    },
+  ]
 
   // Automatically expand the group that contains the current pathname
   useEffect(() => {

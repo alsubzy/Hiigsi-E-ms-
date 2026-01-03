@@ -25,34 +25,40 @@ interface AdminViewProps {
     data: AdminDashboardData
 }
 
+import { useLanguage } from "@/components/language-provider"
+
+// ... imports
+
 export function AdminView({ data }: AdminViewProps) {
+    const { t } = useLanguage()
+
     return (
         <div className="space-y-6">
             {/* Overview Stats */}
             <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
                 <StatsCard
-                    title="Total Students"
+                    title={t("students.students")}
                     value={data.stats.students.toLocaleString()}
                     icon={Users}
                     description="Active students"
                     iconClassName="bg-blue-100 text-blue-600 dark:bg-blue-900/20"
                 />
                 <StatsCard
-                    title="Attendance Today"
+                    title={t("students.attendance")}
                     value={`${data.stats.attendanceRate}%`}
                     icon={ClipboardCheck}
                     trend={{ value: 2.1, label: "vs last month", positive: true }}
                     iconClassName="bg-green-100 text-green-600 dark:bg-green-900/20"
                 />
                 <StatsCard
-                    title="Average Grade"
+                    title={t("students.grade")}
                     value={data.stats.avgGrade}
                     icon={GraduationCap}
                     description="Current term average"
                     iconClassName="bg-purple-100 text-purple-600 dark:bg-purple-900/20"
                 />
                 <StatsCard
-                    title="Monthly Revenue"
+                    title={t("accounting.revenue")}
                     value={`$${data.stats.revenue.toLocaleString()}`}
                     icon={DollarSign}
                     trend={{ value: data.stats.revenueTrend, label: "vs last month", positive: data.stats.revenueTrend >= 0 }}

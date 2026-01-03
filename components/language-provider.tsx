@@ -2,6 +2,7 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react"
 import { translations, type Language } from "@/lib/translations"
+import Cookies from "js-cookie"
 
 interface LanguageContextType {
     language: Language
@@ -17,15 +18,24 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     const [dir, setDir] = useState<"ltr" | "rtl">("ltr")
 
     useEffect(() => {
-        const savedLang = localStorage.getItem("language") as Language
+        // Check cookies first, then localStorage
+        const savedLang = Cookies.get("language") as Language
         if (savedLang && ["en", "so", "ar"].includes(savedLang)) {
-            setLanguage(savedLang)
+            setLanguageState(savedLang)
+            document.documentElement.dir = savedLang === "ar" ? "rtl" : "ltr"
+            document.documentElement.lang = savedLang
+        } else {
+            const localLang = localStorage.getItem("language") as Language
+            if (localLang && ["en", "so", "ar"].includes(localLang)) {
+                setLanguage(localLang) // This will set cookie too
+            }
         }
     }, [])
 
     const setLanguage = (lang: Language) => {
         setLanguageState(lang)
         localStorage.setItem("language", lang)
+        Cookies.set("language", lang, { expires: 365, path: '/' }) // Persist for 1 year, accessible across whole site
         const newDir = lang === "ar" ? "rtl" : "ltr"
         setDir(newDir)
         document.documentElement.dir = newDir
