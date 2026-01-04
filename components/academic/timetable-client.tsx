@@ -3,9 +3,10 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import {
-    Loader2, Plus, Trash, Calendar as CalendarIcon, Clock,
-    User, MapPin, Book, GraduationCap, Filter as FilterIcon,
-    CalendarDays, TimerIcon
+    Loader2, Plus, Trash2, Calendar as CalendarIcon, Clock,
+    User, MapPin, BookOpen, GraduationCap, Filter as FilterIcon,
+    CalendarDays, TimerIcon, LayoutGrid, MoreVertical,
+    CheckCircle2, AlertCircle
 } from "lucide-react"
 import { format } from "date-fns"
 import { motion, AnimatePresence } from "framer-motion"
@@ -31,32 +32,34 @@ interface TimetableClientProps {
 }
 
 const DAYS = [
-    { value: 1, label: "Monday", short: "Mon", color: "from-blue-500/10 to-blue-600/5" },
-    { value: 2, label: "Tuesday", short: "Tue", color: "from-purple-500/10 to-purple-600/5" },
-    { value: 3, label: "Wednesday", short: "Wed", color: "from-green-500/10 to-green-600/5" },
-    { value: 4, label: "Thursday", short: "Thu", color: "from-amber-500/10 to-amber-600/5" },
-    { value: 5, label: "Friday", short: "Fri", color: "from-orange-500/10 to-orange-600/5" },
-    { value: 6, label: "Saturday", short: "Sat", color: "from-pink-500/10 to-pink-600/5" },
-    { value: 7, label: "Sunday", short: "Sun", color: "from-red-500/10 to-red-600/5" },
+    { value: 1, label: "Monday", short: "Mon", color: "from-blue-500/5 to-blue-600/5", iconColor: "text-blue-600" },
+    { value: 2, label: "Tuesday", short: "Tue", color: "from-purple-500/5 to-purple-600/5", iconColor: "text-purple-600" },
+    { value: 3, label: "Wednesday", short: "Wed", color: "from-emerald-500/5 to-emerald-600/5", iconColor: "text-emerald-600" },
+    { value: 4, label: "Thursday", short: "Thu", color: "from-amber-500/5 to-amber-600/5", iconColor: "text-amber-600" },
+    { value: 5, label: "Friday", short: "Fri", color: "from-rose-500/5 to-rose-600/5", iconColor: "text-rose-600" },
+    { value: 6, label: "Saturday", short: "Sat", color: "from-indigo-500/5 to-indigo-600/5", iconColor: "text-indigo-600" },
+    { value: 7, label: "Sunday", short: "Sun", color: "from-slate-500/5 to-slate-600/5", iconColor: "text-slate-600" },
 ]
 
-// Helper to get subject color
-const getSubjectColor = (subjectName: string) => {
+// Helper to get subject color patterns
+const getSubjectStyle = (subjectName: string) => {
     const name = subjectName.toLowerCase()
-    if (name.includes("math")) return "border-l-blue-500 bg-blue-500/5"
-    if (name.includes("science") || name.includes("bio") || name.includes("chem")) return "border-l-green-500 bg-green-500/5"
-    if (name.includes("eng") || name.includes("lang")) return "border-l-purple-500 bg-purple-500/5"
-    if (name.includes("hist") || name.includes("geog")) return "border-l-amber-500 bg-amber-500/5"
-    if (name.includes("tech") || name.includes("comp")) return "border-l-cyan-500 bg-cyan-500/5"
-    return "border-l-zinc-500 bg-zinc-500/5"
+    if (name.includes("math")) return { border: "border-l-blue-500", bg: "bg-blue-50/50 dark:bg-blue-900/10", text: "text-blue-700 dark:text-blue-300", icon: "text-blue-500" }
+    if (name.includes("science") || name.includes("bio") || name.includes("chem") || name.includes("phys")) return { border: "border-l-emerald-500", bg: "bg-emerald-50/50 dark:bg-emerald-900/10", text: "text-emerald-700 dark:text-emerald-300", icon: "text-emerald-500" }
+    if (name.includes("eng") || name.includes("lang") || name.includes("somali") || name.includes("arabic")) return { border: "border-l-purple-500", bg: "bg-purple-50/50 dark:bg-purple-900/10", text: "text-purple-700 dark:text-purple-300", icon: "text-purple-500" }
+    if (name.includes("hist") || name.includes("geog") || name.includes("social")) return { border: "border-l-amber-500", bg: "bg-amber-50/50 dark:bg-amber-900/10", text: "text-amber-700 dark:text-amber-300", icon: "text-amber-500" }
+    if (name.includes("tech") || name.includes("comp") || name.includes("ict")) return { border: "border-l-cyan-500", bg: "bg-cyan-50/50 dark:bg-cyan-900/10", text: "text-cyan-700 dark:text-cyan-300", icon: "text-cyan-500" }
+    if (name.includes("islam") || name.includes("deen") || name.includes("cre")) return { border: "border-l-rose-500", bg: "bg-rose-50/50 dark:bg-rose-900/10", text: "text-rose-700 dark:text-rose-300", icon: "text-rose-500" }
+    return { border: "border-l-zinc-500", bg: "bg-zinc-50/50 dark:bg-zinc-800/20", text: "text-zinc-700 dark:text-zinc-300", icon: "text-zinc-500" }
 }
 
-// Helper to get time-based gradient
-const getTimeGradient = (time: string) => {
-    const hour = parseInt(time.split(':')[0])
-    if (hour < 12) return "from-blue-500/10 to-transparent" // Morning
-    if (hour < 16) return "from-amber-500/10 to-transparent" // Afternoon
-    return "from-purple-500/10 to-transparent" // Evening
+// Helper to get time-based status
+const getTimeStatus = (startTime: string, endTime: string) => {
+    const now = new Date()
+    const currentTime = format(now, "HH:mm")
+    if (currentTime >= startTime && currentTime <= endTime) return "current"
+    if (currentTime < startTime) return "upcoming"
+    return "completed"
 }
 
 export function TimetableClient({ initialClasses, academicYears }: TimetableClientProps) {
@@ -201,27 +204,37 @@ export function TimetableClient({ initialClasses, academicYears }: TimetableClie
             <motion.div
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="flex flex-col md:flex-row md:items-center justify-between gap-4"
+                className="flex flex-col md:flex-row md:items-center justify-between gap-6"
             >
-                <div className="flex items-center gap-4">
-                    <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/20">
-                        <CalendarDays size={32} className="text-blue-600 dark:text-blue-400" />
+                <div className="flex items-center gap-5">
+                    <div className="relative">
+                        <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-2xl blur opacity-25" />
+                        <div className="relative p-4 rounded-2xl bg-white dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 shadow-sm">
+                            <CalendarDays size={28} className="text-blue-600 dark:text-blue-400" />
+                        </div>
                     </div>
                     <div>
-                        <h2 className="text-4xl font-black tracking-tighter bg-gradient-to-r from-zinc-900 via-zinc-600 to-zinc-400 dark:from-white dark:via-zinc-300 dark:to-zinc-500 bg-clip-text text-transparent">
-                            Timetable
+                        <h2 className="text-3xl font-bold tracking-tight text-zinc-900 dark:text-white">
+                            Academic Schedule
                         </h2>
-                        <p className="text-zinc-500 font-medium">Schedule classes for sections.</p>
+                        <div className="flex items-center gap-2 mt-1">
+                            <span className="flex h-2 w-2 rounded-full bg-emerald-500" />
+                            <p className="text-sm font-medium text-zinc-500 dark:text-zinc-400">
+                                {activeYear?.name || "No Active Year"} • Weekly Planner
+                            </p>
+                        </div>
                     </div>
                 </div>
 
-                <Button
-                    onClick={() => setIsDialogOpen(true)}
-                    disabled={!selectedSectionId || !activeYear}
-                    className="h-11 px-6 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:scale-[1.02] transition-transform active:scale-95 font-bold shadow-xl shadow-zinc-200 dark:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                    <Plus className="mr-2 h-4 w-4" /> Add Class
-                </Button>
+                <div className="flex items-center gap-3">
+                    <Button
+                        onClick={() => setIsDialogOpen(true)}
+                        disabled={!selectedSectionId || !activeYear}
+                        className="h-11 px-6 rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-500/20 active:scale-95 transition-all font-semibold disabled:opacity-50"
+                    >
+                        <Plus className="mr-2 h-4 w-4" /> Add Class
+                    </Button>
+                </div>
             </motion.div>
 
             {/* Filters */}
@@ -230,35 +243,37 @@ export function TimetableClient({ initialClasses, academicYears }: TimetableClie
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.1 }}
             >
-                <Card className="rounded-[2rem] border-zinc-200 dark:border-zinc-800 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl shadow-xl shadow-zinc-200/40 dark:shadow-none overflow-hidden border-2">
-                    <CardContent className="p-8 flex flex-col md:flex-row gap-6 items-end">
-                        <div className="flex items-center gap-3 text-xs font-black text-zinc-400 uppercase tracking-[0.2em]">
-                            <FilterIcon size={16} />
-                            <span>Filters</span>
-                        </div>
-                        <div className="grid gap-4 flex-1 md:grid-cols-2">
-                            <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Class Level</Label>
+                <Card className="rounded-[1.5rem] border-zinc-200 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50 backdrop-blur-sm border shadow-none">
+                    <CardContent className="p-5">
+                        <div className="flex flex-col md:flex-row gap-6">
+                            <div className="w-full md:w-1/2 space-y-2">
+                                <Label className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 ml-1">Class Level</Label>
                                 <Select value={selectedClassId} onValueChange={(val) => { setSelectedClassId(val); setSelectedSectionId(""); }}>
-                                    <SelectTrigger className="h-12 rounded-xl border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 font-bold shadow-sm">
-                                        <SelectValue placeholder="Select Class" />
+                                    <SelectTrigger className="h-11 rounded-lg border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm transition-all focus:ring-2 focus:ring-blue-500/20">
+                                        <div className="flex items-center gap-2">
+                                            <LayoutGrid className="h-4 w-4 text-zinc-400" />
+                                            <SelectValue placeholder="Select Class" />
+                                        </div>
                                     </SelectTrigger>
-                                    <SelectContent className="rounded-2xl border-zinc-200 dark:border-zinc-800">
+                                    <SelectContent className="rounded-xl">
                                         {initialClasses.map(c => (
-                                            <SelectItem key={c.id} value={c.id} className="rounded-xl my-1">{c.name}</SelectItem>
+                                            <SelectItem key={c.id} value={c.id} className="rounded-lg my-0.5">{c.name}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
                             </div>
-                            <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Section</Label>
+                            <div className="w-full md:w-1/2 space-y-2">
+                                <Label className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500 ml-1">Section</Label>
                                 <Select value={selectedSectionId} onValueChange={setSelectedSectionId} disabled={!selectedClassId}>
-                                    <SelectTrigger className="h-12 rounded-xl border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 font-bold shadow-sm">
-                                        <SelectValue placeholder="Select Section" />
+                                    <SelectTrigger className="h-11 rounded-lg border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 shadow-sm transition-all focus:ring-2 focus:ring-blue-500/20 disabled:opacity-50">
+                                        <div className="flex items-center gap-2">
+                                            <FilterIcon className="h-4 w-4 text-zinc-400" />
+                                            <SelectValue placeholder="Select Section" />
+                                        </div>
                                     </SelectTrigger>
-                                    <SelectContent className="rounded-2xl border-zinc-200 dark:border-zinc-800">
+                                    <SelectContent className="rounded-xl">
                                         {availableSections.map(s => (
-                                            <SelectItem key={s.id} value={s.id} className="rounded-xl my-1">{s.name}</SelectItem>
+                                            <SelectItem key={s.id} value={s.id} className="rounded-lg my-0.5">{s.name}</SelectItem>
                                         ))}
                                     </SelectContent>
                                 </Select>
@@ -275,104 +290,106 @@ export function TimetableClient({ initialClasses, academicYears }: TimetableClie
                         <Loader2 className="h-8 w-8 animate-spin text-zinc-400" />
                     </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-7 gap-4">
-                        {DAYS.map((day, dayIndex) => {
-                            const dayEntries = timetable.filter(t => t.day_of_week === day.value)
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 auto-rows-fr">
+                        {DAYS.slice(0, 5).map((day, dayIndex) => { // Mostly 5-day week, scroll or wrap for more
+                            const dayEntries = timetable
+                                .filter(t => t.day_of_week === day.value)
+                                .sort((a, b) => a.start_time.localeCompare(b.start_time))
+
                             return (
                                 <motion.div
                                     key={day.value}
-                                    initial={{ opacity: 0, y: 20 }}
+                                    initial={{ opacity: 0, y: 10 }}
                                     animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: dayIndex * 0.05 }}
-                                    whileHover={{ scale: 1.02 }}
-                                    className="group"
+                                    transition={{ delay: dayIndex * 0.1 }}
+                                    className="flex flex-col h-full"
                                 >
-                                    <Card className="min-h-[400px] flex flex-col rounded-[2rem] border-zinc-200 dark:border-zinc-800 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl overflow-hidden transition-all hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)] dark:hover:shadow-none hover:border-zinc-900 dark:hover:border-white">
-                                        <CardHeader className={cn(
-                                            "p-6 border-b border-zinc-100 dark:border-zinc-800 bg-gradient-to-br",
-                                            day.color
-                                        )}>
-                                            <div className="flex items-center justify-between">
-                                                <div>
-                                                    <CardTitle className="text-sm font-black uppercase tracking-widest text-zinc-900 dark:text-white">
-                                                        {day.label}
-                                                    </CardTitle>
-                                                    <p className="text-[10px] font-bold text-zinc-400 mt-1 uppercase tracking-wider">
-                                                        {dayEntries.length} {dayEntries.length === 1 ? 'Class' : 'Classes'}
-                                                    </p>
-                                                </div>
-                                                <CalendarIcon size={20} className="text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors" />
-                                            </div>
-                                        </CardHeader>
-                                        <CardContent className="p-4 flex-1 space-y-3">
-                                            <AnimatePresence>
-                                                {dayEntries.length === 0 && (
+                                    <div className="mb-4 px-3 flex items-center justify-between">
+                                        <h3 className="font-bold text-zinc-900 dark:text-zinc-100">{day.label}</h3>
+                                        <span className="px-2 py-0.5 rounded-full bg-zinc-100 dark:bg-zinc-800 text-[10px] font-bold text-zinc-500 uppercase tracking-tighter">
+                                            {dayEntries.length} Period{dayEntries.length !== 1 ? 's' : ''}
+                                        </span>
+                                    </div>
+
+                                    <Card className="flex-1 rounded-2xl border-zinc-200 dark:border-zinc-800 bg-zinc-50/30 dark:bg-zinc-950/30 shadow-none border overflow-hidden">
+                                        <CardContent className="p-3 space-y-3">
+                                            <AnimatePresence mode="popLayout">
+                                                {dayEntries.length === 0 ? (
                                                     <motion.div
                                                         initial={{ opacity: 0 }}
                                                         animate={{ opacity: 1 }}
-                                                        exit={{ opacity: 0 }}
-                                                        className="flex flex-col items-center justify-center py-12 text-center"
+                                                        className="flex flex-col items-center justify-center py-10 opacity-40 select-none"
                                                     >
-                                                        <Book size={32} className="text-zinc-200 dark:text-zinc-800 mb-3" />
-                                                        <p className="text-xs text-zinc-400 font-medium">No classes scheduled</p>
+                                                        <div className="w-12 h-12 rounded-full bg-zinc-200 dark:bg-zinc-800 flex items-center justify-center mb-3">
+                                                            <CalendarIcon size={20} className="text-zinc-400" />
+                                                        </div>
+                                                        <p className="text-[11px] font-medium text-zinc-500">No scheduled periods</p>
                                                     </motion.div>
-                                                )}
-                                                {dayEntries.map((entry, entryIndex) => (
-                                                    <motion.div
-                                                        key={entry.id}
-                                                        initial={{ opacity: 0, y: 10 }}
-                                                        animate={{ opacity: 1, y: 0 }}
-                                                        exit={{ opacity: 0, y: -10 }}
-                                                        transition={{ delay: entryIndex * 0.05 }}
-                                                        whileHover={{ y: -4, scale: 1.02 }}
-                                                        className={cn(
-                                                            "relative bg-white dark:bg-zinc-900 border-l-4 rounded-xl p-4 shadow-sm group/entry hover:shadow-lg transition-all",
-                                                            getSubjectColor(entry.subject?.name || "")
-                                                        )}
-                                                    >
-                                                        <div className="space-y-2.5">
-                                                            <div className="flex items-start justify-between">
-                                                                <div className="flex items-center gap-2">
-                                                                    <Book size={14} className="text-zinc-400 flex-shrink-0" />
-                                                                    <div className="font-black text-sm tracking-tight text-zinc-900 dark:text-white line-clamp-1">
-                                                                        {entry.subject?.name}
+                                                ) : (
+                                                    dayEntries.map((entry, entryIndex) => {
+                                                        const subjectStyle = getSubjectStyle(entry.subject?.name || "")
+                                                        return (
+                                                            <motion.div
+                                                                key={entry.id}
+                                                                layout
+                                                                initial={{ opacity: 0, scale: 0.95 }}
+                                                                animate={{ opacity: 1, scale: 1 }}
+                                                                exit={{ opacity: 0, scale: 0.95 }}
+                                                                whileHover={{ y: -2, transition: { duration: 0.2 } }}
+                                                                className={cn(
+                                                                    "group relative p-4 rounded-xl border bg-white dark:bg-zinc-900 transition-all",
+                                                                    "hover:ring-2 hover:ring-blue-500/10 hover:shadow-md",
+                                                                    subjectStyle.border
+                                                                )}
+                                                            >
+                                                                <div className="space-y-3">
+                                                                    <div className="flex items-start justify-between">
+                                                                        <div className="space-y-1">
+                                                                            <div className="flex items-center gap-1.5">
+                                                                                <span className={cn("text-[10px] font-black uppercase tracking-wider", subjectStyle.text)}>
+                                                                                    {entry.subject?.name}
+                                                                                </span>
+                                                                            </div>
+                                                                            <div className="flex items-center gap-2 text-[13px] font-bold text-zinc-900 dark:text-zinc-100">
+                                                                                <Clock size={14} className="text-zinc-400" />
+                                                                                <span>{entry.start_time.slice(0, 5)} - {entry.end_time.slice(0, 5)}</span>
+                                                                            </div>
+                                                                        </div>
+                                                                        <div className="flex flex-col items-end gap-2">
+                                                                            <Button
+                                                                                variant="ghost"
+                                                                                size="icon"
+                                                                                onClick={() => handleDeleteEntry(entry.id)}
+                                                                                className="h-7 w-7 rounded-lg opacity-0 group-hover:opacity-100 hover:bg-red-50 hover:text-red-600 transition-all"
+                                                                            >
+                                                                                <Trash2 size={12} />
+                                                                            </Button>
+                                                                        </div>
+                                                                    </div>
+
+                                                                    <div className="flex flex-wrap items-center gap-x-4 gap-y-2 pt-2 border-t border-zinc-50 dark:border-zinc-800">
+                                                                        {entry.teacher && (
+                                                                            <div className="flex items-center gap-1.5 min-w-0">
+                                                                                <User size={12} className="text-zinc-400 shrink-0" />
+                                                                                <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 truncate">
+                                                                                    {entry.teacher.full_name}
+                                                                                </span>
+                                                                            </div>
+                                                                        )}
+                                                                        {entry.room_number && (
+                                                                            <div className="flex items-center gap-1.5">
+                                                                                <MapPin size={12} className="text-zinc-400 shrink-0" />
+                                                                                <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400">
+                                                                                    Room {entry.room_number}
+                                                                                </span>
+                                                                            </div>
+                                                                        )}
                                                                     </div>
                                                                 </div>
-                                                                <button
-                                                                    onClick={() => handleDeleteEntry(entry.id)}
-                                                                    className="opacity-0 group-hover/entry:opacity-100 p-1.5 hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-red-500 rounded-lg transition-all"
-                                                                >
-                                                                    <Trash className="h-3.5 w-3.5" />
-                                                                </button>
-                                                            </div>
-
-                                                            <div className="flex items-center gap-2 text-xs font-bold text-zinc-600 dark:text-zinc-400">
-                                                                <Clock className="h-3.5 w-3.5 text-zinc-400" />
-                                                                <span className="font-mono">{entry.start_time.slice(0, 5)} - {entry.end_time.slice(0, 5)}</span>
-                                                            </div>
-
-                                                            {entry.teacher && (
-                                                                <div className="flex items-center gap-2 text-xs font-medium text-zinc-500">
-                                                                    <User className="h-3.5 w-3.5 text-zinc-400" />
-                                                                    <span className="truncate">{entry.teacher.full_name}</span>
-                                                                </div>
-                                                            )}
-
-                                                            {entry.room_number && (
-                                                                <div className="flex items-center gap-2 text-xs font-medium text-zinc-500">
-                                                                    <MapPin className="h-3.5 w-3.5 text-zinc-400" />
-                                                                    <span>Room {entry.room_number}</span>
-                                                                </div>
-                                                            )}
-                                                        </div>
-
-                                                        {/* Decorative gradient */}
-                                                        <div className={cn(
-                                                            "absolute top-0 right-0 w-20 h-20 bg-gradient-to-br rounded-full opacity-0 group-hover/entry:opacity-100 transition-opacity duration-500 blur-2xl pointer-events-none",
-                                                            getTimeGradient(entry.start_time)
-                                                        )} />
-                                                    </motion.div>
-                                                ))}
+                                                            </motion.div>
+                                                        )
+                                                    })
+                                                )}
                                             </AnimatePresence>
                                         </CardContent>
                                     </Card>
@@ -383,112 +400,129 @@ export function TimetableClient({ initialClasses, academicYears }: TimetableClie
                 )
             ) : (
                 <motion.div
-                    initial={{ opacity: 0, scale: 0.95 }}
+                    initial={{ opacity: 0, scale: 0.98 }}
                     animate={{ opacity: 1, scale: 1 }}
-                    className="flex flex-col items-center justify-center py-32 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-[3rem] bg-zinc-50/30 dark:bg-zinc-900/10"
+                    className="flex flex-col items-center justify-center py-40 border rounded-[2rem] bg-zinc-50/50 dark:bg-zinc-900/20 border-zinc-200 dark:border-zinc-800"
                 >
-                    <CalendarDays size={64} className="text-zinc-200 dark:text-zinc-800 mb-6" />
-                    <p className="font-bold text-zinc-500 text-lg mb-2">No Section Selected</p>
-                    <p className="text-sm text-zinc-400">Select a Class and Section to view the timetable.</p>
+                    <div className="w-16 h-16 rounded-2xl bg-white dark:bg-zinc-800 shadow-sm border flex items-center justify-center mb-6">
+                        <CalendarDays size={32} className="text-zinc-300" />
+                    </div>
+                    <h3 className="text-lg font-bold text-zinc-900 dark:text-zinc-100">Schedule Viewer</h3>
+                    <p className="text-sm text-zinc-500 mt-1">Select a class and section to manage the weekly schedule.</p>
                 </motion.div>
             )}
 
             {/* Add Class Dialog */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="max-w-xl rounded-[2.5rem] bg-white dark:bg-zinc-950 p-0 overflow-hidden border-none shadow-[0_30px_100px_rgba(0,0,0,0.2)]">
-                    <DialogHeader className="p-10 pb-4">
-                        <DialogTitle className="text-3xl font-black tracking-tighter">Schedule Class</DialogTitle>
-                        <DialogDescription className="text-zinc-500 font-medium text-base">
-                            Add a class to the weekly schedule.
+                <DialogContent className="max-w-md rounded-2xl p-0 overflow-hidden border-zinc-200 dark:border-zinc-800">
+                    <DialogHeader className="p-6 border-b border-zinc-100 dark:border-zinc-800">
+                        <DialogTitle className="text-xl font-bold">Schedule Period</DialogTitle>
+                        <DialogDescription className="text-xs">
+                            Define a new period for this section's weekly schedule.
                         </DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={handleCreateEntry} className="px-10 pb-10 space-y-6">
-                        <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Day</Label>
-                            <Select value={formDay} onValueChange={setFormDay}>
-                                <SelectTrigger className="h-14 rounded-2xl border-zinc-200 dark:border-zinc-800 font-bold bg-zinc-50 dark:bg-zinc-900/50">
-                                    <SelectValue placeholder="Select Day" />
-                                </SelectTrigger>
-                                <SelectContent className="rounded-[1.5rem] border-zinc-200 dark:border-zinc-800">
-                                    {DAYS.map(d => <SelectItem key={d.value} value={d.value.toString()} className="rounded-xl my-1 font-bold">{d.label}</SelectItem>)}
-                                </SelectContent>
-                            </Select>
+                    <form onSubmit={handleCreateEntry} className="p-6 space-y-5">
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                                <Label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-tight ml-1">Day of Week</Label>
+                                <Select value={formDay} onValueChange={setFormDay}>
+                                    <SelectTrigger className="h-10 rounded-lg border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 font-medium shadow-sm">
+                                        <SelectValue placeholder="Select Day" />
+                                    </SelectTrigger>
+                                    <SelectContent className="rounded-xl">
+                                        {DAYS.map(d => <SelectItem key={d.value} value={d.value.toString()} className="rounded-md my-0.5">{d.label}</SelectItem>)}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+
+                            <div className="space-y-1.5">
+                                <Label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-tight ml-1">Room (Optional)</Label>
+                                <Input
+                                    placeholder="e.g. 101"
+                                    value={formRoom}
+                                    onChange={e => setFormRoom(e.target.value)}
+                                    className="h-10 rounded-lg border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900"
+                                />
+                            </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Subject</Label>
+                        <div className="space-y-1.5">
+                            <Label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-tight ml-1">Subject</Label>
                             <Select value={formSubjectId} onValueChange={setFormSubjectId}>
-                                <SelectTrigger className="h-14 rounded-2xl border-zinc-200 dark:border-zinc-800 font-bold bg-zinc-50 dark:bg-zinc-900/50">
-                                    <SelectValue placeholder="Select Subject" />
+                                <SelectTrigger className="h-10 rounded-lg border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 font-medium shadow-sm">
+                                    <div className="flex items-center gap-2">
+                                        <BookOpen className="h-3.5 w-3.5 text-zinc-400" />
+                                        <SelectValue placeholder="Select Subject" />
+                                    </div>
                                 </SelectTrigger>
-                                <SelectContent className="rounded-[1.5rem] border-zinc-200 dark:border-zinc-800">
-                                    {availableSubjects.map(s => <SelectItem key={s.id} value={s.id} className="rounded-xl my-1 font-bold">{s.name}</SelectItem>)}
+                                <SelectContent className="rounded-xl">
+                                    {availableSubjects.map(s => <SelectItem key={s.id} value={s.id} className="rounded-md my-0.5">{s.name}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Teacher</Label>
+                        <div className="space-y-1.5">
+                            <div className="flex items-baseline justify-between px-1">
+                                <Label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-tight">Teacher</Label>
+                                {!formTeacherId && formSubjectId && <span className="text-[9px] text-amber-600 font-bold uppercase">No allocation found</span>}
+                            </div>
                             <Select value={formTeacherId} onValueChange={setFormTeacherId}>
-                                <SelectTrigger className="h-14 rounded-2xl border-zinc-200 dark:border-zinc-800 font-bold bg-zinc-50 dark:bg-zinc-900/50">
-                                    <SelectValue placeholder={availableTeachers.length ? "Select Teacher" : "No teachers allocated"} />
+                                <SelectTrigger className="h-10 rounded-lg border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 font-medium shadow-sm">
+                                    <div className="flex items-center gap-2">
+                                        <User className="h-3.5 w-3.5 text-zinc-400" />
+                                        <SelectValue placeholder={availableTeachers.length ? "Select Teacher" : "Select a subject first"} />
+                                    </div>
                                 </SelectTrigger>
-                                <SelectContent className="rounded-[1.5rem] border-zinc-200 dark:border-zinc-800">
-                                    {availableTeachers.map(t => <SelectItem key={t.id} value={t.id} className="rounded-xl my-1 font-bold">{t.name}</SelectItem>)}
+                                <SelectContent className="rounded-xl">
+                                    {availableTeachers.map(t => <SelectItem key={t.id} value={t.id} className="rounded-md my-0.5">{t.name}</SelectItem>)}
                                 </SelectContent>
                             </Select>
-                            {!formTeacherId && formSubjectId && <p className="text-xs text-amber-600 dark:text-amber-500 ml-1 font-medium">Tip: Allocate a teacher to this subject/section first.</p>}
                         </div>
 
-                        <div className="grid grid-cols-2 gap-6">
-                            <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Start Time</Label>
-                                <Input
-                                    type="time"
-                                    value={formStartTime}
-                                    onChange={e => setFormStartTime(e.target.value)}
-                                    required
-                                    className="h-14 rounded-2xl border-zinc-200 dark:border-zinc-800 font-bold bg-zinc-50 dark:bg-zinc-900/50 text-base"
-                                />
+                        <div className="grid grid-cols-2 gap-4">
+                            <div className="space-y-1.5">
+                                <Label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-tight ml-1">Start Time</Label>
+                                <div className="relative">
+                                    <Clock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+                                    <Input
+                                        type="time"
+                                        value={formStartTime}
+                                        onChange={e => setFormStartTime(e.target.value)}
+                                        required
+                                        className="h-10 pl-9 rounded-lg border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900"
+                                    />
+                                </div>
                             </div>
-                            <div className="space-y-2">
-                                <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">End Time</Label>
-                                <Input
-                                    type="time"
-                                    value={formEndTime}
-                                    onChange={e => setFormEndTime(e.target.value)}
-                                    required
-                                    className="h-14 rounded-2xl border-zinc-200 dark:border-zinc-800 font-bold bg-zinc-50 dark:bg-zinc-900/50 text-base"
-                                />
+                            <div className="space-y-1.5">
+                                <Label className="text-[11px] font-semibold text-zinc-500 uppercase tracking-tight ml-1">End Time</Label>
+                                <div className="relative">
+                                    <Clock size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+                                    <Input
+                                        type="time"
+                                        value={formEndTime}
+                                        onChange={e => setFormEndTime(e.target.value)}
+                                        required
+                                        className="h-10 pl-9 rounded-lg border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900"
+                                    />
+                                </div>
                             </div>
                         </div>
 
-                        <div className="space-y-2">
-                            <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Room (Optional)</Label>
-                            <Input
-                                placeholder="e.g. 101"
-                                value={formRoom}
-                                onChange={e => setFormRoom(e.target.value)}
-                                className="h-14 rounded-2xl border-zinc-200 dark:border-zinc-800 font-bold bg-zinc-50 dark:bg-zinc-900/50 text-base"
-                            />
-                        </div>
-
-                        <div className="flex justify-end gap-3 pt-4">
+                        <div className="flex justify-end gap-2 pt-4 border-t border-zinc-100 dark:border-zinc-800">
                             <Button
                                 type="button"
                                 variant="ghost"
                                 onClick={() => setIsDialogOpen(false)}
-                                className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                                className="h-10 px-4 rounded-lg font-semibold text-zinc-500 hover:bg-zinc-50"
                             >
                                 Cancel
                             </Button>
                             <Button
                                 type="submit"
                                 disabled={isSubmitting || !formTeacherId}
-                                className="h-14 px-10 rounded-2xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-black uppercase tracking-[0.2em] text-xs hover:scale-105 transition-transform shadow-[0_15px_30px_rgba(0,0,0,0.1)] active:scale-95 disabled:opacity-50"
+                                className="h-10 px-6 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-semibold transition-all shadow-md shadow-blue-500/10 active:scale-95 disabled:opacity-50"
                             >
-                                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CalendarIcon className="mr-2 h-5 w-5" />}
-                                Schedule
+                                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Schedule Period"}
                             </Button>
                         </div>
                     </form>
