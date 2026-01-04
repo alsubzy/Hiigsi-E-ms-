@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/select"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Plus, Search, ChevronRight, Activity, ShieldCheck, Edit2, Trash2, AlertCircle } from "lucide-react"
+import { Plus, Search, Activity, Edit2, Trash2, AlertCircle, LayoutGrid, DollarSign, Tag, Calendar, GraduationCap, ArrowUpRight, CheckCircle2, Info, Receipt, TrendingUp, TrendingDown, Wallet } from "lucide-react"
 import { toast } from "sonner"
 import {
     AlertDialog,
@@ -37,6 +37,8 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
+import { motion, AnimatePresence } from "framer-motion"
+import { cn } from "@/lib/utils"
 
 export default function COAPage() {
     const [accounts, setAccounts] = useState<any[]>([])
@@ -106,10 +108,14 @@ export default function COAPage() {
         try {
             if (selectedAccount) {
                 await updateAccount(selectedAccount.id, payload)
-                toast.success("Account updated successfully")
+                toast.success("Account updated successfully", {
+                    className: "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-800"
+                })
             } else {
                 await createAccount(payload)
-                toast.success("Account created successfully")
+                toast.success("Account created successfully", {
+                    className: "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-800"
+                })
             }
             setIsDialogOpen(false)
             fetchData()
@@ -126,7 +132,9 @@ export default function COAPage() {
         setIsSubmitting(true)
         try {
             await deleteAccount(accountToDelete.id)
-            toast.success("Account deleted successfully")
+            toast.success("Account deleted successfully", {
+                className: "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-100 dark:border-emerald-800"
+            })
             setIsDeleteDialogOpen(false)
             fetchData()
         } catch (error: any) {
@@ -138,11 +146,11 @@ export default function COAPage() {
     }
 
     const typeColors: Record<string, string> = {
-        asset: "bg-blue-50 text-blue-700 border-blue-100",
-        liability: "bg-red-50 text-red-700 border-red-100",
-        equity: "bg-purple-50 text-purple-700 border-purple-100",
-        income: "bg-emerald-50 text-emerald-700 border-emerald-100",
-        expense: "bg-orange-50 text-orange-700 border-orange-100",
+        asset: "bg-blue-50 text-blue-600 dark:bg-blue-900/20 dark:text-blue-400 border-blue-100 dark:border-blue-800",
+        liability: "bg-rose-50 text-rose-600 dark:bg-rose-900/20 dark:text-rose-400 border-rose-100 dark:border-rose-800",
+        equity: "bg-violet-50 text-violet-600 dark:bg-violet-900/20 dark:text-violet-400 border-violet-100 dark:border-violet-800",
+        income: "bg-emerald-50 text-emerald-600 dark:bg-emerald-900/20 dark:text-emerald-400 border-emerald-100 dark:border-emerald-800",
+        expense: "bg-orange-50 text-orange-600 dark:bg-orange-900/20 dark:text-orange-400 border-orange-100 dark:border-orange-800",
     }
 
     const filteredAccounts = accounts.filter(acc =>
@@ -156,11 +164,16 @@ export default function COAPage() {
     }, {})
 
     return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <div>
-                    <h2 className="text-xl font-bold tracking-tight text-gray-900">Chart of Accounts</h2>
-                    <p className="text-sm text-gray-400 font-bold uppercase tracking-widest mt-0.5">Financial Control & Ledger Mapping</p>
+        <div className="space-y-8 pb-10">
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-6 bg-white dark:bg-zinc-950 p-8 rounded-[2.5rem] border border-zinc-100 dark:border-zinc-800 shadow-xl shadow-zinc-200/50 dark:shadow-none">
+                <div className="space-y-1">
+                    <div className="flex items-center gap-3 mb-2">
+                        <div className="w-10 h-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center text-blue-600 dark:text-blue-400">
+                            <TableProperties size={20} />
+                        </div>
+                        <h2 className="text-2xl font-black tracking-tight text-zinc-900 dark:text-white">Chart of Accounts</h2>
+                    </div>
+                    <p className="text-zinc-500 dark:text-zinc-400 text-sm font-medium">Configure and manage your organization&apos;s financial ledger structure.</p>
                 </div>
                 <div className="flex gap-2">
                     <Dialog open={isDialogOpen} onOpenChange={(open) => {
@@ -168,52 +181,52 @@ export default function COAPage() {
                         if (!open) resetForm()
                     }}>
                         <DialogTrigger asChild>
-                            <Button className="font-bold gap-2 shadow-lg shadow-primary/20 bg-blue-600 hover:bg-blue-700 text-white">
-                                <Plus className="w-4 h-4" /> Add GL Account
+                            <Button className="h-12 px-6 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black text-sm uppercase tracking-wider flex items-center gap-2 shadow-xl shadow-blue-500/20 transition-all active:scale-95">
+                                <Plus size={18} /> Add GL Account
                             </Button>
                         </DialogTrigger>
-                        <DialogContent className="sm:max-w-[425px]">
+                        <DialogContent className="sm:max-w-[425px] rounded-[2rem] border-none shadow-2xl p-0 overflow-hidden">
                             <form onSubmit={handleSubmit}>
-                                <DialogHeader>
-                                    <DialogTitle>{selectedAccount ? "Edit Account" : "Add New GL Account"}</DialogTitle>
-                                    <DialogDescription>
-                                        Configure a new account in the Chart of Accounts.
+                                <div className="bg-zinc-50 dark:bg-zinc-900 p-8 border-b border-zinc-100 dark:border-zinc-800">
+                                    <DialogTitle className="text-2xl font-black text-zinc-900 dark:text-white mb-2">{selectedAccount ? "Update Account" : "Add GL Account"}</DialogTitle>
+                                    <DialogDescription className="text-zinc-500 dark:text-zinc-400 font-medium">
+                                        Configure a new entry in the organizational ledger schema.
                                     </DialogDescription>
-                                </DialogHeader>
-                                <div className="grid gap-4 py-4">
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="code" className="text-xs font-bold uppercase text-gray-500">Account Code</Label>
+                                </div>
+                                <div className="p-8 space-y-5 bg-white dark:bg-zinc-950">
+                                    <div className="space-y-2">
+                                        <Label htmlFor="code" className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Account Code</Label>
                                         <Input
                                             id="code"
                                             value={formData.code}
                                             onChange={e => setFormData({ ...formData, code: e.target.value })}
                                             placeholder="e.g. 1001"
                                             required
-                                            className="rounded-xl border-gray-200"
+                                            className="h-12 rounded-xl bg-zinc-50 dark:bg-zinc-900 border-zinc-100 dark:border-zinc-800 focus:ring-2 focus:ring-blue-500/20 font-bold"
                                         />
                                     </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="name" className="text-xs font-bold uppercase text-gray-500">Account Name</Label>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="name" className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Account Name</Label>
                                         <Input
                                             id="name"
                                             value={formData.name}
                                             onChange={e => setFormData({ ...formData, name: e.target.value })}
                                             placeholder="e.g. Cash on Hand"
                                             required
-                                            className="rounded-xl border-gray-200"
+                                            className="h-12 rounded-xl bg-zinc-50 dark:bg-zinc-900 border-zinc-100 dark:border-zinc-800 focus:ring-2 focus:ring-blue-500/20 font-bold"
                                         />
                                     </div>
                                     <div className="grid grid-cols-2 gap-4">
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="type" className="text-xs font-bold uppercase text-gray-500">Type</Label>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="type" className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Type</Label>
                                             <Select
                                                 value={formData.type}
                                                 onValueChange={(val) => setFormData({ ...formData, type: val })}
                                             >
-                                                <SelectTrigger className="rounded-xl border-gray-200 font-medium">
+                                                <SelectTrigger className="h-12 rounded-xl bg-zinc-50 dark:bg-zinc-900 border-zinc-100 dark:border-zinc-800 focus:ring-2 focus:ring-blue-500/20 font-bold">
                                                     <SelectValue placeholder="Select type" />
                                                 </SelectTrigger>
-                                                <SelectContent>
+                                                <SelectContent className="rounded-xl">
                                                     <SelectItem value="asset">Asset</SelectItem>
                                                     <SelectItem value="liability">Liability</SelectItem>
                                                     <SelectItem value="equity">Equity</SelectItem>
@@ -222,16 +235,16 @@ export default function COAPage() {
                                                 </SelectContent>
                                             </Select>
                                         </div>
-                                        <div className="grid gap-2">
-                                            <Label htmlFor="parent" className="text-xs font-bold uppercase text-gray-500">Parent Account</Label>
+                                        <div className="space-y-2">
+                                            <Label htmlFor="parent" className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Hierarchy</Label>
                                             <Select
                                                 value={formData.parent_id}
                                                 onValueChange={(val) => setFormData({ ...formData, parent_id: val })}
                                             >
-                                                <SelectTrigger className="rounded-xl border-gray-200 font-medium">
+                                                <SelectTrigger className="h-12 rounded-xl bg-zinc-50 dark:bg-zinc-900 border-zinc-100 dark:border-zinc-800 focus:ring-2 focus:ring-blue-500/20 font-bold">
                                                     <SelectValue placeholder="None" />
                                                 </SelectTrigger>
-                                                <SelectContent>
+                                                <SelectContent className="rounded-xl">
                                                     <SelectItem value="null">None (Root)</SelectItem>
                                                     {accounts.filter(a => !a.parent_id && a.id !== selectedAccount?.id).map(acc => (
                                                         <SelectItem key={acc.id} value={acc.id}>{acc.name}</SelectItem>
@@ -240,34 +253,34 @@ export default function COAPage() {
                                             </Select>
                                         </div>
                                     </div>
-                                    <div className="grid gap-2">
-                                        <Label htmlFor="description" className="text-xs font-bold uppercase text-gray-500">Description</Label>
+                                    <div className="space-y-2">
+                                        <Label htmlFor="description" className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Meta Description</Label>
                                         <Textarea
                                             id="description"
                                             value={formData.description}
                                             onChange={e => setFormData({ ...formData, description: e.target.value })}
-                                            placeholder="Brief description of this account purpose..."
-                                            className="rounded-xl border-gray-200 min-h-[80px]"
+                                            placeholder="Optional accounting context..."
+                                            className="rounded-xl bg-zinc-50 dark:bg-zinc-900 border-zinc-100 dark:border-zinc-800 min-h-[100px] font-medium resize-none"
                                         />
                                     </div>
                                 </div>
-                                <DialogFooter>
+                                <div className="p-8 pt-0 flex gap-3 bg-white dark:bg-zinc-950">
                                     <Button
                                         type="button"
                                         variant="ghost"
                                         onClick={() => setIsDialogOpen(false)}
-                                        className="font-bold text-gray-500"
+                                        className="flex-1 h-12 rounded-xl font-bold text-zinc-400 hover:text-zinc-600"
                                     >
                                         Cancel
                                     </Button>
                                     <Button
                                         type="submit"
                                         disabled={isSubmitting}
-                                        className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl"
+                                        className="flex-[2] h-12 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-wider shadow-lg shadow-blue-500/20"
                                     >
-                                        {isSubmitting ? "Saving..." : selectedAccount ? "Update Account" : "Create Account"}
+                                        {isSubmitting ? "Processing..." : selectedAccount ? "Update Ledger" : "Create Account"}
                                     </Button>
-                                </DialogFooter>
+                                </div>
                             </form>
                         </DialogContent>
                     </Dialog>
@@ -275,149 +288,199 @@ export default function COAPage() {
             </div>
 
             <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                {Object.entries(summary).map(([type, count]: [any, any]) => (
-                    <Card key={type} className="border-none shadow-sm overflow-hidden group">
-                        <div className={`h-1 w-full ${typeColors[type]?.split(' ')[0]}`} />
-                        <CardContent className="pt-4">
-                            <div className="text-[10px] font-black uppercase text-slate-400 tracking-widest">{type}s</div>
-                            <div className="text-2xl font-black text-slate-800 group-hover:text-primary transition-colors">{count}</div>
-                        </CardContent>
-                    </Card>
-                ))}
+                {['asset', 'liability', 'equity', 'income', 'expense'].map((type) => {
+                    const count = summary[type] || 0
+                    return (
+                        <Card key={type} className="border-none shadow-xl shadow-zinc-200/50 dark:shadow-none bg-white dark:bg-zinc-950 rounded-3xl overflow-hidden group hover:scale-[1.02] transition-all">
+                            <div className={cn("h-1.5 w-full", typeColors[type]?.split(' ')[0])} />
+                            <CardContent className="p-6">
+                                <div className="flex items-center justify-between mb-4">
+                                    <div className={cn("w-10 h-10 rounded-xl flex items-center justify-center", typeColors[type])}>
+                                        <TrendingUp size={18} />
+                                    </div>
+                                    <ArrowUpRight size={14} className="text-zinc-300 group-hover:text-zinc-500 transition-colors" />
+                                </div>
+                                <div className="text-[10px] font-black uppercase text-zinc-400 tracking-[0.2em] mb-1">{type} Accounts</div>
+                                <div className="text-3xl font-black text-zinc-900 dark:text-white tracking-tighter">{count}</div>
+                            </CardContent>
+                        </Card>
+                    )
+                })}
             </div>
 
-            <Card className="border-none shadow-sm overflow-hidden">
-                <CardHeader className="bg-slate-50/50 border-b">
-                    <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                        <div className="flex items-center gap-2">
-                            <ShieldCheck className="w-5 h-5 text-emerald-500" />
-                            <CardTitle className="text-lg font-black uppercase tracking-tight text-slate-700">Financial GL Map</CardTitle>
+            <Card className="border-none shadow-xl shadow-zinc-200/50 dark:shadow-none bg-white dark:bg-zinc-950 rounded-[2.5rem] overflow-hidden">
+                <CardHeader className="p-8 bg-zinc-50/50 dark:bg-zinc-900/50 border-b border-zinc-100 dark:border-zinc-800">
+                    <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6">
+                        <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800">
+                                <ShieldCheck size={20} />
+                            </div>
+                            <div>
+                                <CardTitle className="text-xl font-black text-zinc-900 dark:text-white tracking-tight">General Ledger Map</CardTitle>
+                                <p className="text-zinc-500 text-xs font-medium">Authoritative financial account hierarchy.</p>
+                            </div>
                         </div>
-                        <div className="relative">
-                            <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground" />
-                            <Input
-                                placeholder="Filter by code or name..."
-                                className="pl-9 w-[300px] border-slate-200 rounded-xl font-medium bg-white"
-                                value={searchTerm}
-                                onChange={e => setSearchTerm(e.target.value)}
-                            />
+                        <div className="flex flex-col sm:flex-row items-center gap-3">
+                            <div className="relative group w-full sm:w-[320px]">
+                                <Search className="w-4 h-4 absolute left-4 top-1/2 -translate-y-1/2 text-zinc-400 group-focus-within:text-blue-500 transition-colors" />
+                                <Input
+                                    placeholder="Execute filter via code or name..."
+                                    className="h-12 pl-12 pr-4 rounded-2xl border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 font-bold focus:ring-2 focus:ring-blue-500/20 shadow-inner"
+                                    value={searchTerm}
+                                    onChange={e => setSearchTerm(e.target.value)}
+                                />
+                            </div>
+                            <Button variant="ghost" size="icon" className="h-12 w-12 rounded-2xl border border-zinc-200 dark:border-zinc-800 text-zinc-500 hover:bg-zinc-100 dark:hover:bg-zinc-800 transition-all shrink-0">
+                                <Filter size={18} />
+                            </Button>
                         </div>
                     </div>
                 </CardHeader>
                 <CardContent className="p-0">
-                    {isLoading ? (
-                        <div className="h-60 flex flex-col items-center justify-center text-muted-foreground font-bold gap-2">
-                            <Activity className="w-8 h-8 animate-spin text-primary" />
-                            Initializing Ledger Schema...
-                        </div>
-                    ) : (
-                        <div className="overflow-x-auto">
-                            <Table>
-                                <TableHeader className="bg-slate-50/20">
-                                    <TableRow className="hover:bg-transparent border-slate-100">
-                                        <TableHead className="font-bold text-slate-400 pl-6 w-[120px]">Code</TableHead>
-                                        <TableHead className="font-bold text-slate-400">Account Name</TableHead>
-                                        <TableHead className="font-bold text-slate-400">Classification</TableHead>
-                                        <TableHead className="font-bold text-slate-400 hidden lg:table-cell">Description</TableHead>
-                                        <TableHead className="font-bold text-slate-400 text-center">Status</TableHead>
-                                        <TableHead className="font-bold text-slate-400 text-right pr-6">Action</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {filteredAccounts.length === 0 ? (
-                                        <TableRow>
-                                            <TableCell colSpan={6} className="h-40 text-center text-muted-foreground font-medium">
-                                                No accounts found.
-                                            </TableCell>
+                    <AnimatePresence mode="wait">
+                        {isLoading ? (
+                            <motion.div
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                exit={{ opacity: 0 }}
+                                className="h-80 flex flex-col items-center justify-center text-zinc-400 font-bold gap-4"
+                            >
+                                <div className="relative">
+                                    <Activity className="w-12 h-12 animate-pulse text-blue-500" />
+                                    <div className="absolute inset-0 w-12 h-12 border-4 border-blue-500/10 border-t-blue-500 rounded-full animate-spin" />
+                                </div>
+                                <div className="flex flex-col items-center">
+                                    <span className="text-sm font-black uppercase tracking-[0.2em] text-zinc-900 dark:text-white">Synchronizing Ledger</span>
+                                    <span className="text-[10px] font-medium text-zinc-400">Fetching schema from cloud database...</span>
+                                </div>
+                            </motion.div>
+                        ) : (
+                            <div className="overflow-x-auto h-full scrollbar-thin scrollbar-thumb-zinc-200 dark:scrollbar-thumb-zinc-800">
+                                <Table className="min-w-[900px]">
+                                    <TableHeader className="bg-zinc-50/20 dark:bg-zinc-900/20">
+                                        <TableRow className="hover:bg-transparent border-zinc-100 dark:border-zinc-800">
+                                            <TableHead className="font-black text-zinc-400 text-[10px] uppercase tracking-[0.2em] py-5 px-8 w-[150px]">Entity Code</TableHead>
+                                            <TableHead className="font-black text-zinc-400 text-[10px] uppercase tracking-[0.2em] py-5 px-4">Account Label</TableHead>
+                                            <TableHead className="font-black text-zinc-400 text-[10px] uppercase tracking-[0.2em] py-5 px-4 w-[160px]">Classification</TableHead>
+                                            <TableHead className="font-black text-zinc-400 text-[10px] uppercase tracking-[0.2em] py-5 px-4 hidden lg:table-cell">Contextual Meta</TableHead>
+                                            <TableHead className="font-black text-zinc-400 text-[10px] uppercase tracking-[0.2em] py-5 px-4 text-center w-[120px]">Current Status</TableHead>
+                                            <TableHead className="font-black text-zinc-400 text-[10px] uppercase tracking-[0.2em] py-5 px-8 text-right w-[150px]">Management</TableHead>
                                         </TableRow>
-                                    ) : (
-                                        filteredAccounts.map((acc) => (
-                                            <TableRow key={acc.id} className="border-slate-50 group hover:bg-slate-50/50 transition-colors">
-                                                <TableCell className="pl-6 font-mono text-xs font-black text-slate-500">
-                                                    {acc.code}
-                                                </TableCell>
-                                                <TableCell>
-                                                    <div className="flex items-center gap-2">
-                                                        {acc.parent_id && <ChevronRight className="w-3 h-3 text-slate-300 ml-4" />}
-                                                        <span className={`font-bold transition-colors ${acc.parent_id ? "text-slate-500 text-sm" : "text-slate-900"}`}>
-                                                            {acc.name}
-                                                        </span>
-                                                    </div>
-                                                </TableCell>
-                                                <TableCell>
-                                                    <Badge className={`${typeColors[acc.type] || ""} border-none font-black text-[9px] uppercase tracking-widest px-2 py-1 shadow-none rounded-full`}>
-                                                        {acc.type}
-                                                    </Badge>
-                                                </TableCell>
-                                                <TableCell className="text-slate-400 text-xs italic max-w-[200px] truncate hidden lg:table-cell">
-                                                    {acc.description || "—"}
-                                                </TableCell>
-                                                <TableCell className="text-center">
-                                                    {acc.is_active ? (
-                                                        <div className="inline-flex items-center gap-1.5 text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full text-[10px] font-black border border-emerald-100">
-                                                            <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                                            ACTIVE
+                                    </TableHeader>
+                                    <TableBody>
+                                        {filteredAccounts.length === 0 ? (
+                                            <TableRow>
+                                                <TableCell colSpan={6} className="h-60 text-center">
+                                                    <div className="flex flex-col items-center justify-center gap-3">
+                                                        <div className="w-16 h-16 rounded-full bg-zinc-50 dark:bg-zinc-900 flex items-center justify-center text-zinc-300 dark:text-zinc-700">
+                                                            <Activity size={32} />
                                                         </div>
-                                                    ) : (
-                                                        <div className="inline-flex items-center gap-1.5 text-slate-400 bg-slate-50 px-2 py-0.5 rounded-full text-[10px] font-black border border-slate-100">
-                                                            <div className="w-1.5 h-1.5 rounded-full bg-slate-400" />
-                                                            DISABLED
-                                                        </div>
-                                                    )}
-                                                </TableCell>
-                                                <TableCell className="text-right pr-6">
-                                                    <div className="flex justify-end gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-8 w-8 text-blue-600 hover:text-blue-700 hover:bg-blue-50"
-                                                            onClick={() => handleEdit(acc)}
-                                                        >
-                                                            <Edit2 className="h-4 w-4" />
-                                                        </Button>
-                                                        <Button
-                                                            variant="ghost"
-                                                            size="icon"
-                                                            className="h-8 w-8 text-red-600 hover:text-red-700 hover:bg-red-50"
-                                                            onClick={() => {
-                                                                setAccountToDelete(acc)
-                                                                setIsDeleteDialogOpen(true)
-                                                            }}
-                                                        >
-                                                            <Trash2 className="h-4 w-4" />
-                                                        </Button>
+                                                        <p className="text-zinc-400 font-bold uppercase tracking-[0.2em] text-[10px]">No ledger accounts detected</p>
                                                     </div>
                                                 </TableCell>
                                             </TableRow>
-                                        ))
-                                    )}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    )}
+                                        ) : (
+                                            filteredAccounts.map((acc, index) => (
+                                                <motion.tr
+                                                    key={acc.id}
+                                                    initial={{ opacity: 0, y: 10 }}
+                                                    animate={{ opacity: 1, y: 0 }}
+                                                    transition={{ delay: index * 0.03 }}
+                                                    className="border-zinc-50 dark:border-zinc-900 group hover:bg-zinc-50 dark:hover:bg-zinc-900/50 transition-colors"
+                                                >
+                                                    <TableCell className="py-5 px-8">
+                                                        <span className="inline-flex items-center px-3 py-1 rounded-lg bg-zinc-100 dark:bg-zinc-800 text-[11px] font-black text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 font-mono tracking-tighter shadow-sm w-fit">
+                                                            {acc.code}
+                                                        </span>
+                                                    </TableCell>
+                                                    <TableCell className="py-5 px-4">
+                                                        <div className="flex items-center gap-3">
+                                                            {acc.parent_id && <ChevronRight className="w-3.5 h-3.5 text-zinc-300 ml-4 group-hover:translate-x-1 transition-transform" />}
+                                                            <span className={cn(
+                                                                "font-bold transition-colors",
+                                                                acc.parent_id ? "text-zinc-500 text-sm" : "text-zinc-900 dark:text-zinc-100 text-base"
+                                                            )}>
+                                                                {acc.name}
+                                                            </span>
+                                                        </div>
+                                                    </TableCell>
+                                                    <TableCell className="py-5 px-4">
+                                                        <Badge className={cn("border px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest shadow-none", typeColors[acc.type])}>
+                                                            {acc.type}
+                                                        </Badge>
+                                                    </TableCell>
+                                                    <TableCell className="py-5 px-4 text-zinc-400 text-xs italic max-w-[250px] truncate hidden lg:table-cell">
+                                                        {acc.description || "—"}
+                                                    </TableCell>
+                                                    <TableCell className="py-5 px-4 text-center">
+                                                        {acc.is_active ? (
+                                                            <div className="inline-flex items-center gap-1.5 text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/20 px-3 py-1 rounded-full text-[10px] font-black border border-emerald-100 dark:border-emerald-800">
+                                                                <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shadow-[0_0_8px_rgba(16,185,129,0.5)]" />
+                                                                SYNCED
+                                                            </div>
+                                                        ) : (
+                                                            <div className="inline-flex items-center gap-1.5 text-zinc-400 bg-zinc-50 dark:bg-zinc-900/50 px-3 py-1 rounded-full text-[10px] font-black border border-zinc-200 dark:border-zinc-800">
+                                                                <div className="w-1.5 h-1.5 rounded-full bg-zinc-400" />
+                                                                OFFLINE
+                                                            </div>
+                                                        )}
+                                                    </TableCell>
+                                                    <TableCell className="py-5 px-8 text-right">
+                                                        <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all scale-95 group-hover:scale-100">
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-10 w-10 text-blue-600 hover:text-blue-700 hover:bg-blue-50 dark:hover:bg-blue-900/20 rounded-xl transition-all"
+                                                                onClick={() => handleEdit(acc)}
+                                                            >
+                                                                <Edit2 size={16} />
+                                                            </Button>
+                                                            <Button
+                                                                variant="ghost"
+                                                                size="icon"
+                                                                className="h-10 w-10 text-rose-600 hover:text-rose-700 hover:bg-rose-50 dark:hover:bg-rose-900/20 rounded-xl transition-all"
+                                                                onClick={() => {
+                                                                    setAccountToDelete(acc)
+                                                                    setIsDeleteDialogOpen(true)
+                                                                }}
+                                                            >
+                                                                <Trash2 size={16} />
+                                                            </Button>
+                                                        </div>
+                                                    </TableCell>
+                                                </motion.tr>
+                                            ))
+                                        )}
+                                    </TableBody>
+                                </Table>
+                            </div>
+                        )}
+                    </AnimatePresence>
                 </CardContent>
             </Card>
 
             <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-                <AlertDialogContent className="rounded-2xl border-none shadow-2xl">
-                    <AlertDialogHeader>
-                        <AlertDialogTitle className="flex items-center gap-2 text-red-600">
-                            <AlertCircle className="w-5 h-5" />
-                            Confirm Deletion
+                <AlertDialogContent className="rounded-[2rem] border-none shadow-2xl p-8 max-w-md">
+                    <AlertDialogHeader className="mb-6">
+                        <div className="w-16 h-16 rounded-2xl bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center text-rose-600 dark:text-rose-400 mb-4 mx-auto">
+                            <AlertCircle size={32} />
+                        </div>
+                        <AlertDialogTitle className="text-2xl font-black text-zinc-900 dark:text-white text-center">
+                            Irreversible Action
                         </AlertDialogTitle>
-                        <AlertDialogDescription className="text-slate-500 font-medium">
-                            Are you sure you want to delete <span className="font-bold text-slate-900">"{accountToDelete?.name}"</span>?
-                            This action cannot be undone and will fail if the account has existing transactions.
+                        <AlertDialogDescription className="text-zinc-500 dark:text-zinc-400 font-medium text-center">
+                            Are you absolutely sure you want to delete <span className="font-black text-zinc-900 dark:text-zinc-100">"{accountToDelete?.name}"</span>?
+                            This will permanently remove the ledger entry.
                         </AlertDialogDescription>
                     </AlertDialogHeader>
-                    <AlertDialogFooter className="gap-2">
-                        <AlertDialogCancel className="rounded-xl font-bold border-slate-200">Cancel</AlertDialogCancel>
+                    <AlertDialogFooter className="flex-col sm:flex-row gap-3 sm:gap-0">
+                        <AlertDialogCancel className="w-full h-12 rounded-xl font-bold border-zinc-200 text-zinc-500">Abort Deletion</AlertDialogCancel>
                         <AlertDialogAction
                             onClick={handleDelete}
                             disabled={isSubmitting}
-                            className="bg-red-600 hover:bg-red-700 text-white rounded-xl font-bold px-8 shadow-lg shadow-red-200"
+                            className="w-full h-12 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-black uppercase tracking-wider shadow-lg shadow-rose-500/20 transition-all active:scale-95"
                         >
-                            {isSubmitting ? "Deleting..." : "Delete Account"}
+                            {isSubmitting ? "Processing..." : "Confirm Delete"}
                         </AlertDialogAction>
                     </AlertDialogFooter>
                 </AlertDialogContent>

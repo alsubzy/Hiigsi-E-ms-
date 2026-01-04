@@ -3,11 +3,12 @@
 import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Card } from "@/components/ui/card"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
 import { Plus, Search, Edit, Trash2, User, Users, Phone, Mail, GraduationCap, MoreVertical, LayoutGrid, List, Filter } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 import { cn } from "@/lib/utils"
+import { StudentDialog } from "@/components/students/student-dialog"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import type { Student } from "@/lib/types"
 import { deleteStudent } from "@/app/actions/students"
@@ -79,8 +80,6 @@ export function StudentsClient({ students, userRole, classes }: StudentsClientPr
       setStudentToDelete(null)
     }
   }
-
-  const canModify = ["admin", "staff"].includes(userRole)
 
   const canModify = ["admin", "staff"].includes(userRole)
 
