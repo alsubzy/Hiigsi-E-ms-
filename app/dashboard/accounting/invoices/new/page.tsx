@@ -51,15 +51,20 @@ export default function NewInvoicePage() {
             const supabase = createClient()
             const { data: student } = await supabase
                 .from("students")
-                .select("id, first_name, last_name, classes(name)")
+                .select("id, first_name, last_name, sections(classes(name))")
                 .eq("id", studentId)
                 .single()
 
             if (student) {
+                const sectionData = student.sections as any
+                const className = Array.isArray(sectionData)
+                    ? sectionData[0]?.classes?.name
+                    : sectionData?.classes?.name
+
                 setSelectedStudent({
                     ...student,
                     full_name: `${student.first_name} ${student.last_name}`,
-                    class_name: Array.isArray(student.classes) ? student.classes[0]?.name : (student.classes as any)?.name || "N/A"
+                    class_name: className || "N/A"
                 })
             }
 
@@ -83,22 +88,30 @@ export default function NewInvoicePage() {
         .reduce((sum, f) => sum + Number(f.net_amount), 0)
 
     async function handleSubmit() {
+        console.log("Submitting Invoice Creation...", { selectedStudent, selectedFeeIds, dueDate, notes })
+
         if (!selectedStudent || selectedFeeIds.length === 0) {
+            console.warn("Validation Failed: Missing student or fees")
             toast.error("Please select a student and at least one fee item")
             return
         }
 
         setIsSubmitting(true)
         try {
-            await createInvoice({
+            console.log("Calling createInvoice action...")
+            const invoice = await createInvoice({
                 student_id: selectedStudent.id,
                 fee_ids: selectedFeeIds,
                 due_date: dueDate,
                 notes
             })
-            toast.success("Invoice generated successfully")
+            console.log("Invoice Created:", invoice)
+            toast.success("Invoice Generated", {
+                description: `Successfully created invoice for ${selectedStudent.first_name}`
+            })
             router.push("/dashboard/accounting/invoices")
         } catch (error: any) {
+            console.error("Create Invoice Error:", error)
             toast.error(error.message)
         } finally {
             setIsSubmitting(false)

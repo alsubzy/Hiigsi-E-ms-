@@ -57,7 +57,7 @@ export default function FeeStructuresPage() {
         fee_category_id: "",
         academic_year_id: "",
         term_id: "",
-        grade: "",
+        class_id: "",
         amount: "",
         is_mandatory: true,
         due_date: ""
@@ -129,7 +129,7 @@ export default function FeeStructuresPage() {
             fee_category_id: "",
             academic_year_id: "",
             term_id: "",
-            grade: "",
+            class_id: "",
             amount: "",
             is_mandatory: true,
             due_date: ""
@@ -143,7 +143,7 @@ export default function FeeStructuresPage() {
             fee_category_id: struct.fee_category_id,
             academic_year_id: struct.academic_year_id,
             term_id: struct.term_id,
-            grade: struct.grade,
+            class_id: struct.class_id,
             amount: struct.amount.toString(),
             is_mandatory: struct.is_mandatory,
             due_date: struct.due_date ? new Date(struct.due_date).toISOString().split('T')[0] : ""
@@ -174,7 +174,7 @@ export default function FeeStructuresPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
 
-        if (!formData.academic_year_id || !formData.term_id || !formData.fee_category_id || !formData.grade || !formData.amount) {
+        if (!formData.academic_year_id || !formData.term_id || !formData.fee_category_id || !formData.class_id || !formData.amount) {
             toast.error("Please fill in all required fields")
             return
         }
@@ -185,25 +185,31 @@ export default function FeeStructuresPage() {
             fee_category_id: formData.fee_category_id,
             academic_year_id: formData.academic_year_id,
             term_id: formData.term_id,
-            class_name: formData.grade, // Map grade selection to class_name
+            class_id: formData.class_id,
             amount: parseFloat(formData.amount),
             due_date: formData.due_date || undefined,
             is_mandatory: formData.is_mandatory
         }
 
         try {
+            let result;
             if (selectedStructure) {
-                await updateFeeStructure(selectedStructure.id, payload)
-                toast.success("Fee structure updated successfully")
+                result = await updateFeeStructure(selectedStructure.id, payload)
             } else {
-                await createFeeStructure(payload)
-                toast.success("Fee structure created successfully")
+                result = await createFeeStructure(payload)
             }
-            setIsDialogOpen(false)
-            fetchData()
-            resetForm()
+
+            if (result.success) {
+                toast.success(selectedStructure ? "Fee structure updated successfully" : "Fee structure created successfully")
+                setIsDialogOpen(false)
+                fetchData() // Refresh list
+                resetForm()
+            } else {
+                toast.error(result.message || "Failed to save fee structure")
+            }
         } catch (error: any) {
-            toast.error(error.message)
+            console.error("Submission error:", error)
+            toast.error("An unexpected error occurred")
         } finally {
             setIsSubmitting(false)
         }
@@ -227,7 +233,7 @@ export default function FeeStructuresPage() {
 
     const filteredStructures = structures.filter(s =>
         s.fee_categories?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        s.grade?.toLowerCase().includes(searchTerm.toLowerCase())
+        s.classes?.name?.toLowerCase().includes(searchTerm.toLowerCase())
     )
 
 
@@ -327,10 +333,10 @@ export default function FeeStructuresPage() {
                                             </Select>
                                         </div>
                                         <div className="grid gap-2">
-                                            <Label htmlFor="grade" className="text-xs font-bold uppercase text-gray-400">Grade / Class</Label>
+                                            <Label htmlFor="class_id" className="text-xs font-bold uppercase text-gray-400">Grade / Class</Label>
                                             <Select
-                                                value={formData.grade}
-                                                onValueChange={(val) => setFormData({ ...formData, grade: val })}
+                                                value={formData.class_id}
+                                                onValueChange={(val) => setFormData({ ...formData, class_id: val })}
                                                 required
                                             >
                                                 <SelectTrigger className="rounded-xl border-slate-200">
@@ -338,7 +344,7 @@ export default function FeeStructuresPage() {
                                                 </SelectTrigger>
                                                 <SelectContent>
                                                     {classes.map(c => (
-                                                        <SelectItem key={c.id} value={c.name}>{c.name}</SelectItem>
+                                                        <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
                                                     ))}
                                                 </SelectContent>
                                             </Select>
@@ -493,7 +499,7 @@ export default function FeeStructuresPage() {
                                                 </TableCell>
                                                 <TableCell>
                                                     <Badge className="bg-blue-50 text-blue-600 border-none font-bold text-[10px] uppercase px-2 py-0.5 rounded-full shadow-none">
-                                                        {struct.grade}
+                                                        {struct.classes?.name}
                                                     </Badge>
                                                 </TableCell>
                                                 <TableCell className="text-slate-500 font-medium text-sm">
@@ -554,7 +560,7 @@ export default function FeeStructuresPage() {
                             Confirm Deletion
                         </AlertDialogTitle>
                         <AlertDialogDescription className="text-slate-500 font-medium">
-                            Are you sure you want to delete this fee structure for <span className="font-bold text-slate-900">{structureToDelete?.fee_categories?.name} ({structureToDelete?.grade})</span>?
+                            Are you sure you want to delete this fee structure for <span className="font-bold text-slate-900">{structureToDelete?.fee_categories?.name} ({structureToDelete?.classes?.name})</span>?
                             This will fail if students are already assigned to this structure.
                         </AlertDialogDescription>
                     </AlertDialogHeader>

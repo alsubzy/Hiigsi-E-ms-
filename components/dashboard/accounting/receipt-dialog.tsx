@@ -93,12 +93,18 @@ export function ReceiptDialog({ paymentId, trigger }: ReceiptDialogProps) {
                                     <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">Detailed To</h4>
                                     <p className="text-lg font-bold text-slate-900">{data.students?.first_name} {data.students?.last_name}</p>
                                     <p className="text-slate-600 text-sm">ID: {data.students?.student_id || data.student_id?.split('-')[0]}</p>
-                                    <p className="text-slate-600 text-sm">Class: {data.students?.class_name}</p>
+                                    <p className="text-slate-600 text-sm">
+                                        Class: {(() => {
+                                            const sections = data.students?.sections;
+                                            const section = Array.isArray(sections) ? sections[0] : sections;
+                                            return section?.classes?.name || "N/A";
+                                        })()}
+                                    </p>
                                 </div>
                                 <div className="text-right">
                                     <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wide mb-2">Payment Details</h4>
                                     <p className="text-sm text-slate-600"><span className="font-semibold">Date:</span> {format(new Date(data.payment_date), "MMMM do, yyyy")}</p>
-                                    <p className="text-sm text-slate-600"><span className="font-semibold">Method:</span> <span className="capitalize">{data.payment_method}</span></p>
+                                    <p className="text-sm text-slate-600"><span className="font-semibold">Method:</span> <span className="capitalize">{data.payment_method?.replace('_', ' ')}</span></p>
                                     <p className="text-sm text-slate-600"><span className="font-semibold">Collected By:</span> {data.users_collected?.full_name || "System"}</p>
                                 </div>
                             </div>

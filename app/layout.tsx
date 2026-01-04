@@ -36,7 +36,20 @@ export default function RootLayout({
             disableTransitionOnChange
           >
             {children}
-            <Toaster richColors position="top-right" />
+            <Toaster
+              position="top-center"
+              toastOptions={{
+                classNames: {
+                  toast: "group rounded-2xl border-none shadow-2xl bg-white dark:bg-slate-900 p-5 flex flex-col items-start gap-1",
+                  title: "text-base font-bold text-slate-900 dark:text-white leading-tight",
+                  description: "text-xs font-medium text-slate-500 dark:text-slate-400",
+                  success: "border-l-[6px] border-l-emerald-500",
+                  error: "border-l-[6px] border-l-rose-500",
+                  info: "border-l-[6px] border-l-blue-500",
+                  warning: "border-l-[6px] border-l-orange-500",
+                }
+              }}
+            />
             <Analytics />
           </ThemeProvider>
         </LanguageProvider>

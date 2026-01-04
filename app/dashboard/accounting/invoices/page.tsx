@@ -66,7 +66,7 @@ export default function InvoicesListPage() {
         try {
             const { data, error } = await supabase
                 .from("invoices")
-                .select("*, students(first_name, last_name, grade)")
+                .select("*, students(first_name, last_name, sections(classes(name)))")
                 .order("date", { ascending: false })
 
             if (error) throw error
@@ -75,7 +75,8 @@ export default function InvoicesListPage() {
                 ...inv,
                 students: inv.students ? {
                     ...inv.students,
-                    full_name: `${inv.students.first_name} ${inv.students.last_name}`
+                    full_name: `${inv.students.first_name} ${inv.students.last_name}`,
+                    classes: inv.students.sections?.classes
                 } : null
             })) || []
 
@@ -254,7 +255,7 @@ export default function InvoicesListPage() {
                                         <TableCell>
                                             <div className="flex flex-col">
                                                 <span className="font-bold text-gray-900">{inv.students?.full_name}</span>
-                                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mt-1">Grade {inv.students?.grade}</span>
+                                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest leading-none mt-1">Grade {inv.students?.classes?.name || "N/A"}</span>
                                             </div>
                                         </TableCell>
                                         <TableCell className="text-right font-medium text-gray-500">

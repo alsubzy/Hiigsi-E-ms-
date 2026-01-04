@@ -31,9 +31,11 @@ export default function InvoiceDetailPage() {
           students (
             first_name,
             last_name,
-            classes (
-            name
-          ),
+            sections (
+              classes (
+                name
+              )
+            ),
             id
           ),
           invoice_items (
@@ -58,7 +60,8 @@ export default function InvoiceDetailPage() {
                 ...data,
                 students: data.students ? {
                     ...data.students,
-                    full_name: `${data.students.first_name} ${data.students.last_name}`
+                    full_name: `${data.students.first_name} ${data.students.last_name}`,
+                    classes: data.students.sections?.classes
                 } : null
             }
 

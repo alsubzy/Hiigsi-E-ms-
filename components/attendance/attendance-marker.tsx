@@ -47,7 +47,10 @@ export function AttendanceMarker({ students, existingAttendance, date }: Attenda
       await Promise.all(
         students.map((student) => markAttendance(student.id, date, attendanceData[student.id] || "present")),
       )
-      toast.success("Attendance saved successfully!")
+      const presentCount = students.filter(s => attendanceData[s.id] === "present").length
+      toast.success("Attendance Saved", {
+        description: `${presentCount}/${students.length} students marked present`
+      })
       router.refresh()
     } catch (error: any) {
       toast.error("Failed to save attendance: " + (error.message || "Unknown error"))
