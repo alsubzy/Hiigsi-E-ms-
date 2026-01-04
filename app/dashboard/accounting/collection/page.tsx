@@ -12,7 +12,7 @@ export default async function FeeCollectionPage() {
         .limit(10)
 
     return (
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 h-full">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-8 h-full">
             <div className="lg:col-span-4">
                 <PaymentForm />
             </div>

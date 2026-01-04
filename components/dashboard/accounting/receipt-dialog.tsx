@@ -1,7 +1,8 @@
 "use client"
 
-import { Dialog, DialogContent, DialogTrigger } from "@/components/ui/dialog"
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { Printer, Loader2, School } from "lucide-react"
 import { useState, useEffect } from "react"
 import { getPaymentDetails } from "@/app/actions/accounting"
@@ -25,8 +26,10 @@ export function ReceiptDialog({ paymentId, trigger }: ReceiptDialogProps) {
 
     async function fetchData() {
         setLoading(true)
+        console.log("[ReceiptDialog] Fetching details for ID:", paymentId)
         try {
             const details = await getPaymentDetails(paymentId)
+            console.log("[ReceiptDialog] Fetched data:", details)
             setData(details)
         } catch (e) {
             console.error(e)
@@ -49,6 +52,12 @@ export function ReceiptDialog({ paymentId, trigger }: ReceiptDialogProps) {
                 )}
             </DialogTrigger>
             <DialogContent className="max-w-[800px] bg-white sm:rounded-none p-0 overflow-hidden">
+                <DialogHeader className="sr-only">
+                    <DialogTitle>Payment Receipt</DialogTitle>
+                    <DialogDescription>
+                        View and print student payment receipt for record keeping.
+                    </DialogDescription>
+                </DialogHeader>
                 {loading ? (
                     <div className="flex flex-col items-center justify-center h-64">
                         <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -115,26 +124,49 @@ export function ReceiptDialog({ paymentId, trigger }: ReceiptDialogProps) {
                                     <thead className="bg-slate-50">
                                         <tr>
                                             <th className="py-3 px-4 text-left font-semibold text-slate-600">Description</th>
+                                            <th className="py-3 px-4 text-center font-semibold text-slate-600">Academic Year / Term</th>
                                             <th className="py-3 px-4 text-right font-semibold text-slate-600">Amount</th>
                                         </tr>
                                     </thead>
                                     <tbody className="divide-y divide-slate-100 border-b border-slate-100">
-                                        {/* Assuming invoice items relate to this payment.
-                        Since we pay mostly lump sum against invoice, we show "Payment against Invoice X" or list items if we had specific allocation.
-                        For simplicity, we show the main fee or description.
-                    */}
-                                        <tr>
-                                            <td className="py-4 px-4 font-medium text-slate-800">
-                                                Payment for Invoice #{data.invoices?.invoice_no}
-                                                {data.notes && <div className="text-xs text-slate-500 mt-1">{data.notes}</div>}
-                                            </td>
-                                            <td className="py-4 px-4 text-right font-bold text-slate-900">${Number(data.amount).toLocaleString()}</td>
-                                        </tr>
+                                        {data.invoices?.invoice_items?.map((item: any, idx: number) => {
+                                            const fee = Array.isArray(item.student_fees) ? item.student_fees[0] : item.student_fees;
+                                            const academicYear = fee?.academic_years?.name || "N/A";
+                                            const term = fee?.terms?.name || "N/A";
+                                            const category = fee?.fee_structures?.fee_categories?.name || item.description || "School Fee";
+
+                                            return (
+                                                <tr key={idx}>
+                                                    <td className="py-4 px-4 font-medium text-slate-800">
+                                                        {category}
+                                                        <div className="text-[10px] text-slate-400 uppercase tracking-tighter">Invoice #{data.invoices?.invoice_no}</div>
+                                                    </td>
+                                                    <td className="py-4 px-4 text-center text-slate-600">
+                                                        <Badge variant="outline" className="text-[10px] font-bold py-0 h-5">
+                                                            {academicYear} • {term}
+                                                        </Badge>
+                                                    </td>
+                                                    <td className="py-4 px-4 text-right font-bold text-slate-900">
+                                                        ${Number(item.amount).toLocaleString()}
+                                                    </td>
+                                                </tr>
+                                            );
+                                        })}
+                                        {(!data.invoices?.invoice_items || data.invoices.invoice_items.length === 0) && (
+                                            <tr>
+                                                <td className="py-4 px-4 font-medium text-slate-800">
+                                                    Payment for Invoice #{data.invoices?.invoice_no}
+                                                    {data.notes && <div className="text-xs text-slate-500 mt-1">{data.notes}</div>}
+                                                </td>
+                                                <td className="py-4 px-4 text-center text-slate-400">-</td>
+                                                <td className="py-4 px-4 text-right font-bold text-slate-900">${Number(data.amount).toLocaleString()}</td>
+                                            </tr>
+                                        )}
                                     </tbody>
                                     <tfoot>
                                         <tr>
-                                            <td className="py-4 px-4 text-right font-bold text-slate-900">Total Paid</td>
-                                            <td className="py-4 px-4 text-right font-black text-xl text-slate-900 border-t-2 border-slate-900">
+                                            <td colSpan={2} className="py-4 px-4 text-right font-bold text-slate-900 border-t-2 border-slate-900 mt-2">Total Paid</td>
+                                            <td className="py-4 px-4 text-right font-black text-xl text-slate-900 border-t-2 border-slate-900 mt-2">
                                                 ${Number(data.amount).toLocaleString()}
                                             </td>
                                         </tr>

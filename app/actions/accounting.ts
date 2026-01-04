@@ -582,6 +582,29 @@ export async function processPayment(data: {
 
   console.log("[processPayment] Found invoice:", invoice.invoice_no, "Current Paid:", invoice.paid_amount)
 
+  // 1b. Validate Required GL Accounts before submitting to trigger
+  // This prevents the "null value in column account_id" error
+  const { data: recAccount } = await supabase.from("accounts").select("id").eq("code", "1200").single()
+  if (!recAccount) throw new Error("System configuration error: Accounts Receivable (1200) not found. Please run setup.")
+
+  let debitAccountId: string | null = null
+  if (data.bank_account_id) {
+    const { data: bankAcc } = await supabase
+      .from("bank_accounts")
+      .select("gl_account_id")
+      .eq("id", data.bank_account_id)
+      .single()
+
+    if (!bankAcc?.gl_account_id) throw new Error("Selected bank account is not properly linked to the Chart of Accounts.")
+    debitAccountId = bankAcc.gl_account_id
+  } else {
+    const { data: cashAccount } = await supabase.from("accounts").select("id").eq("code", "1110").single()
+    if (!cashAccount) throw new Error("System configuration error: Main Cash Account (1110) not found. Please run setup.")
+    debitAccountId = cashAccount.id
+  }
+
+  console.log("[processPayment] GL Validation passed. Debit Account ID:", debitAccountId)
+
   const currentBalance = Number(invoice.total_amount) - Number(invoice.paid_amount)
   if (data.amount > currentBalance) {
     throw new Error(`Overpayment detected. Maximum payable amount is $${currentBalance.toLocaleString()}`)
@@ -703,22 +726,38 @@ export async function getPaymentDetails(paymentId: string) {
     .from("accounting_payments")
     .select(`
             *,
-            students (first_name, last_name, student_id, sections(name, classes(name))),
+            students (
+              first_name, 
+              last_name, 
+              student_id, 
+              sections (
+                name, 
+                classes (name)
+              )
+            ),
             invoices (
                 invoice_no, 
                 invoice_items (
                     amount,
+                    description,
                     student_fees (
-                        fee_structures (name)
+                        academic_years (name),
+                        terms (name),
+                        fee_structures (
+                            class_id,
+                            fee_categories (name)
+                        )
                     )
                 )
-            ),
-            users_collected: collected_by (full_name) 
-        `) // Assuming 'collected_by' relates to profiles/users
+            )
+        `)
     .eq("id", paymentId)
     .single()
 
-  if (error) return null // Handle specific errors if needed
+  if (error) {
+    console.error("[getPaymentDetails] Supabase error:", error)
+    return null
+  }
   return data
 }
 

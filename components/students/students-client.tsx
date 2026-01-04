@@ -83,21 +83,21 @@ export function StudentsClient({ students, userRole, classes }: StudentsClientPr
   const canModify = ["admin", "staff"].includes(userRole)
 
   return (
-    <div className="p-6 space-y-4">
-      <Card className="p-4">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex flex-1 gap-2">
-            <div className="relative flex-1 max-w-sm">
+    <div className="p-4 md:p-6 space-y-4 max-w-7xl mx-auto">
+      <Card className="p-4 rounded-2xl border-zinc-100 dark:border-zinc-800 shadow-sm">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div className="flex flex-col xs:flex-row flex-1 gap-2">
+            <div className="relative flex-1 sm:max-w-xs">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
-                placeholder="Search by name, email, or roll number..."
+                placeholder="Search..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9"
+                className="pl-9 h-11 rounded-xl bg-zinc-50 dark:bg-zinc-900 border-transparent focus:ring-2 focus:ring-primary/20"
               />
             </div>
             <Select value={classFilter} onValueChange={setClassFilter}>
-              <SelectTrigger className="w-[140px]">
+              <SelectTrigger className="w-full xs:w-[140px] h-11 rounded-xl bg-zinc-50 dark:bg-zinc-900 border-transparent focus:ring-2 focus:ring-primary/20">
                 <SelectValue placeholder="Filter by class" />
               </SelectTrigger>
               <SelectContent>
@@ -111,7 +111,7 @@ export function StudentsClient({ students, userRole, classes }: StudentsClientPr
             </Select>
           </div>
           {canModify && (
-            <Button onClick={handleAddStudent}>
+            <Button onClick={handleAddStudent} className="h-11 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold px-6 shadow-lg shadow-blue-200">
               <Plus className="mr-2 h-4 w-4" />
               Add Student
             </Button>
@@ -119,64 +119,65 @@ export function StudentsClient({ students, userRole, classes }: StudentsClientPr
         </div>
       </Card>
 
-      <Card>
-        <Table>
-          <TableHeader>
-            <TableRow>
-              <TableHead>Roll No.</TableHead>
-              <TableHead>Name</TableHead>
-              <TableHead>Class</TableHead>
-              <TableHead>Section</TableHead>
-              <TableHead>Parent Contact</TableHead>
-              <TableHead>Status</TableHead>
-              {canModify && <TableHead className="text-right">Actions</TableHead>}
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {filteredStudents.length === 0 ? (
-              <TableRow>
-                <TableCell colSpan={canModify ? 7 : 6} className="text-center text-muted-foreground py-8">
-                  No students found
-                </TableCell>
+      <Card className="rounded-2xl border-zinc-100 dark:border-zinc-800 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <Table>
+            <TableHeader>
+              <TableRow className="bg-zinc-50/50 hover:bg-zinc-50/50">
+                <TableHead className="font-bold text-zinc-400 text-[10px] uppercase tracking-widest pl-6">Roll No.</TableHead>
+                <TableHead className="font-bold text-zinc-400 text-[10px] uppercase tracking-widest">Name</TableHead>
+                <TableHead className="font-bold text-zinc-400 text-[10px] uppercase tracking-widest">Class / Section</TableHead>
+                <TableHead className="font-bold text-zinc-400 text-[10px] uppercase tracking-widest">Parent Contact</TableHead>
+                <TableHead className="font-bold text-zinc-400 text-[10px] uppercase tracking-widest">Status</TableHead>
+                {canModify && <TableHead className="text-right font-bold text-zinc-400 text-[10px] uppercase tracking-widest pr-6">Actions</TableHead>}
               </TableRow>
-            ) : (
-              filteredStudents.map((student) => (
-                <TableRow key={student.id}>
-                  <TableCell className="font-medium">{student.roll_number}</TableCell>
-                  <TableCell>
-                    <div>
-                      <p className="font-medium">{`${student.first_name} ${student.last_name}`}</p>
-                      <p className="text-sm text-muted-foreground">{student.email || "N/A"}</p>
-                    </div>
+            </TableHeader>
+            <TableBody>
+              {filteredStudents.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={canModify ? 7 : 6} className="text-center text-muted-foreground py-8">
+                    No students found
                   </TableCell>
-                  <TableCell>{student.section?.class?.name || "N/A"}</TableCell>
-                  <TableCell>{student.section?.name || "N/A"}</TableCell>
-                  <TableCell>
-                    <div>
-                      <p className="text-sm">{student.parent_name}</p>
-                      <p className="text-xs text-muted-foreground">{student.parent_phone}</p>
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={student.status === "active" ? "default" : "secondary"}>{student.status}</Badge>
-                  </TableCell>
-                  {canModify && (
-                    <TableCell className="text-right">
-                      <div className="flex justify-end gap-2">
-                        <Button variant="ghost" size="icon" onClick={() => handleEditStudent(student)}>
-                          <Edit className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(student.id)}>
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                </TableRow>
+              ) : (
+                filteredStudents.map((student) => (
+                  <TableRow key={student.id}>
+                    <TableCell className="font-medium">{student.roll_number}</TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="font-medium">{`${student.first_name} ${student.last_name}`}</p>
+                        <p className="text-sm text-muted-foreground">{student.email || "N/A"}</p>
                       </div>
                     </TableCell>
-                  )}
-                </TableRow>
-              ))
-            )}
-          </TableBody>
-        </Table>
+                    <TableCell>{student.section?.class?.name || "N/A"}</TableCell>
+                    <TableCell>{student.section?.name || "N/A"}</TableCell>
+                    <TableCell>
+                      <div>
+                        <p className="text-sm">{student.parent_name}</p>
+                        <p className="text-xs text-muted-foreground">{student.parent_phone}</p>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={student.status === "active" ? "default" : "secondary"}>{student.status}</Badge>
+                    </TableCell>
+                    {canModify && (
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button variant="ghost" size="icon" onClick={() => handleEditStudent(student)}>
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button variant="ghost" size="icon" onClick={() => handleDeleteClick(student.id)}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </div>
+                      </TableCell>
+                    )}
+                  </TableRow>
+                ))
+              )}
+            </TableBody>
+          </Table>
+        </div>
       </Card>
 
       {canModify && <StudentDialog open={dialogOpen} onOpenChange={setDialogOpen} student={selectedStudent} />}

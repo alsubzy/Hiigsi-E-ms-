@@ -73,8 +73,8 @@ export function AttendanceClient({ userRole, initialClasses }: AttendanceClientP
   const canMark = ["admin", "teacher", "staff"].includes(userRole)
 
   return (
-    <div className="p-6 space-y-4">
-      <Card>
+    <div className="p-4 md:p-6 space-y-4 max-w-7xl mx-auto">
+      <Card className="rounded-2xl border-zinc-100 dark:border-zinc-800 shadow-sm overflow-hidden">
         <CardContent className="pt-6">
           <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
             <div className="flex flex-col gap-4 md:flex-row md:items-end">
@@ -138,7 +138,7 @@ export function AttendanceClient({ userRole, initialClasses }: AttendanceClientP
       </Card>
 
       {isLoading ? (
-        <Card>
+        <Card className="rounded-2xl border-zinc-100 dark:border-zinc-800 shadow-sm">
           <CardContent className="py-12 text-center">
             <div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto" />
             <p className="mt-4 text-sm text-muted-foreground">Loading...</p>
@@ -161,7 +161,7 @@ export function AttendanceClient({ userRole, initialClasses }: AttendanceClientP
           </Card>
         )
       ) : (
-        <Card>
+        <Card className="rounded-2xl border-zinc-100 dark:border-zinc-800 shadow-sm">
           <CardHeader>
             <CardTitle>Attendance Summary - {format(date, "MMMM yyyy")}</CardTitle>
           </CardHeader>
@@ -169,26 +169,26 @@ export function AttendanceClient({ userRole, initialClasses }: AttendanceClientP
             {stats ? (
               <div className="rounded-lg border p-4">
                 <h3 className="font-semibold mb-3">Overall Statistics</h3>
-                <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-                  <div>
-                    <p className="text-sm text-muted-foreground">Total Records</p>
-                    <p className="text-2xl font-bold">{stats.total}</p>
+                <div className="grid grid-cols-2 lg:grid-cols-5 gap-3 md:gap-4">
+                  <div className="p-3 bg-zinc-50 dark:bg-zinc-900 rounded-xl border border-zinc-100 dark:border-zinc-800">
+                    <p className="text-[10px] font-bold text-zinc-400 uppercase tracking-widest mb-1">Total Records</p>
+                    <p className="text-2xl font-black text-zinc-900 dark:text-zinc-50">{stats.total}</p>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Present</p>
-                    <p className="text-2xl font-bold text-green-600">{stats.present}</p>
+                  <div className="p-3 bg-emerald-50/50 dark:bg-emerald-900/10 rounded-xl border border-emerald-100 dark:border-emerald-900/20">
+                    <p className="text-[10px] font-bold text-emerald-600 uppercase tracking-widest mb-1">Present</p>
+                    <p className="text-2xl font-black text-emerald-600 dark:text-emerald-400">{stats.present}</p>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Absent</p>
-                    <p className="text-2xl font-bold text-red-600">{stats.absent}</p>
+                  <div className="p-3 bg-red-50/50 dark:bg-red-900/10 rounded-xl border border-red-100 dark:border-red-900/20">
+                    <p className="text-[10px] font-bold text-red-600 uppercase tracking-widest mb-1">Absent</p>
+                    <p className="text-2xl font-black text-red-600 dark:text-red-400">{stats.absent}</p>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Late</p>
-                    <p className="text-2xl font-bold text-orange-600">{stats.late}</p>
+                  <div className="p-3 bg-orange-50/50 dark:bg-orange-900/10 rounded-xl border border-orange-100 dark:border-orange-900/20">
+                    <p className="text-[10px] font-bold text-orange-600 uppercase tracking-widest mb-1">Late</p>
+                    <p className="text-2xl font-black text-orange-600 dark:text-orange-400">{stats.late}</p>
                   </div>
-                  <div>
-                    <p className="text-sm text-muted-foreground">Excused</p>
-                    <p className="text-2xl font-bold text-blue-600">{stats.excused}</p>
+                  <div className="p-3 bg-blue-50/50 dark:bg-blue-900/10 rounded-xl border border-blue-100 dark:border-blue-900/20">
+                    <p className="text-[10px] font-bold text-blue-600 uppercase tracking-widest mb-1">Excused</p>
+                    <p className="text-2xl font-black text-blue-600 dark:text-blue-400">{stats.excused}</p>
                   </div>
                 </div>
                 {stats.total > 0 && (

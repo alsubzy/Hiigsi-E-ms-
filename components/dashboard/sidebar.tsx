@@ -16,6 +16,7 @@ import {
   Shield,
   Briefcase,
   ChevronRight,
+  X,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -160,12 +161,24 @@ export function Sidebar({ user, onClose }: SidebarProps) {
   return (
     <div className="flex h-full flex-col bg-white dark:bg-zinc-950 border-r border-zinc-100 dark:border-zinc-800">
       {/* Brand Header */}
-      <div className="h-16 flex items-center gap-3 px-6 border-b border-zinc-100 dark:border-zinc-800">
-        <img src="/hiigsi-logo.jpg" alt="Hiigsi Skills" className="h-10 w-10 object-contain rounded-md" />
-        <div className="flex flex-col">
-          <h1 className="font-bold text-base text-zinc-900 dark:text-zinc-100 leading-none">Hiigsi Skills</h1>
-          <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wide mt-0.5">MANAGEMENT SYSTEM</p>
+      <div className="h-16 flex items-center justify-between px-6 border-b border-zinc-100 dark:border-zinc-800">
+        <div className="flex items-center gap-3">
+          <img src="/hiigsi-logo.jpg" alt="Hiigsi Skills" className="h-10 w-10 object-contain rounded-md" />
+          <div className="flex flex-col">
+            <h1 className="font-bold text-base text-zinc-900 dark:text-zinc-100 leading-none">Hiigsi Skills</h1>
+            <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-wide mt-0.5">MANAGEMENT SYSTEM</p>
+          </div>
         </div>
+        {onClose && (
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onClose}
+            className="lg:hidden -mr-2 text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-100"
+          >
+            <X className="h-5 w-5" />
+          </Button>
+        )}
       </div>
 
       {/* Navigation */}
@@ -192,10 +205,10 @@ export function Sidebar({ user, onClose }: SidebarProps) {
                   href={group.href}
                   onClick={onClose}
                   className={cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200",
+                    "flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all duration-200 group",
                     isActive
                       ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
-                      : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-900 hover:text-zinc-900 dark:hover:text-zinc-100"
+                      : "text-zinc-600 dark:text-zinc-400 hover:bg-zinc-50 dark:hover:bg-zinc-800 hover:text-blue-600 dark:hover:text-blue-400"
                   )}
                 >
                   <Icon className={cn("h-5 w-5", isActive ? "text-white" : "text-zinc-500 dark:text-zinc-500 group-hover:text-zinc-900")} />

@@ -39,21 +39,24 @@ export function DashboardLayout({ children, user }: DashboardLayoutProps) {
       {/* Main Content Area */}
       <div className="flex flex-1 flex-col min-w-0 overflow-hidden">
         {/* Mobile Header */}
-        <div className="flex items-center gap-4 border-b bg-white dark:bg-zinc-900 p-4 lg:hidden">
+        <div className="flex items-center gap-4 border-b bg-white dark:bg-zinc-950 p-4 lg:hidden shadow-sm">
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setSidebarOpen(true)}
-            className="-ml-2"
+            className="-ml-2 hover:bg-zinc-100 dark:hover:bg-zinc-900"
           >
-            <Menu className="h-6 w-6" />
+            <Menu className="h-5 w-5" />
           </Button>
-          <div className="font-semibold text-lg">Hiigsi Skills</div>
+          <div className="flex items-center gap-2">
+            <img src="/hiigsi-logo.jpg" alt="Logo" className="h-8 w-8 rounded-md" />
+            <span className="font-bold text-base tracking-tight italic">Hiigsi Skills</span>
+          </div>
         </div>
 
         {/* Scrollable Content */}
-        <main className="flex-1 overflow-auto scroll-smooth">
-          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <main className="flex-1 overflow-auto scroll-smooth bg-gray-50/30 dark:bg-zinc-950/30">
+          <div className="p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full animate-in fade-in slide-in-from-bottom-2 duration-400">
             {children}
           </div>
         </main>

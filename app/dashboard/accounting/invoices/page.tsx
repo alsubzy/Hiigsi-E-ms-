@@ -173,21 +173,21 @@ export default function InvoicesListPage() {
 
     return (
         <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h2 className="text-xl font-bold tracking-tight text-gray-900 flex items-center gap-2">
-                        <FileText className="w-5 h-5 text-blue-600" />
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                <div className="space-y-1">
+                    <h2 className="text-xl md:text-2xl font-bold tracking-tight text-gray-900 flex items-center gap-2">
+                        <FileText className="w-5 h-5 md:w-6 md:h-6 text-blue-600" />
                         Invoices Directory
                     </h2>
-                    <p className="text-sm text-gray-500 font-medium">Manage student financial obligations and billing cycles.</p>
+                    <p className="text-xs md:text-sm text-gray-500 font-medium max-w-md">Manage student financial obligations and billing cycles.</p>
                 </div>
-                <div className="flex gap-2">
-                    <Button variant="outline" onClick={exportToCSV} className="font-semibold gap-2 border-gray-200">
-                        <Download className="h-4 w-4" /> Export CSV
+                <div className="flex items-center gap-2 w-full sm:w-auto">
+                    <Button variant="outline" onClick={exportToCSV} className="flex-1 sm:flex-none font-semibold gap-2 border-gray-200 h-10 md:h-11 shadow-sm">
+                        <Download className="h-4 w-4" /> Export
                     </Button>
-                    <Link href="/dashboard/accounting/invoices/new">
-                        <Button className="font-semibold shadow-lg gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200">
-                            <Plus className="h-4 w-4" /> Create Invoice
+                    <Link href="/dashboard/accounting/invoices/new" className="flex-1 sm:flex-none">
+                        <Button className="w-full font-semibold shadow-lg gap-2 bg-blue-600 hover:bg-blue-700 text-white shadow-blue-200 h-10 md:h-11">
+                            <Plus className="h-4 w-4" /> <span className="hidden xs:inline">Create Invoice</span><span className="xs:hidden">New</span>
                         </Button>
                     </Link>
                 </div>

@@ -7,9 +7,15 @@ import './globals.css'
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: 'Hiigsi Skills',
-  description: 'School Management System',
+  title: {
+    template: '%s | Hiigsi Skills',
+    default: 'Hiigsi Skills | Modern School Management',
+  },
+  description: 'A professional and comprehensive school management system for modern institutions.',
   generator: 'Hiigsi Skills',
+  keywords: ['school management', 'education', 'erp', 'hiigsi skills'],
+  authors: [{ name: 'Hiigsi Team' }],
+  viewport: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=0',
   icons: {
     icon: '/hiigsi-favicon.jpg',
     shortcut: '/hiigsi-favicon.jpg',

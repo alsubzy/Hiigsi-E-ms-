@@ -47,19 +47,19 @@ export function RecentPaymentsTable({ payments }: RecentPaymentsTableProps) {
     }
 
     return (
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-sm border border-slate-100 dark:border-slate-800 h-full">
-            <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-6">Recent Payments</h2>
+        <div className="bg-white dark:bg-slate-900 rounded-2xl md:rounded-3xl p-4 md:p-8 shadow-sm border border-slate-100 dark:border-slate-800 h-full">
+            <h2 className="text-lg md:text-xl font-bold text-slate-800 dark:text-white mb-4 md:mb-6">Recent Payments</h2>
 
-            <div className="overflow-x-auto">
-                <table className="w-full">
+            <div className="overflow-x-auto -mx-4 md:mx-0 px-4 md:px-0">
+                <table className="w-full min-w-[600px] md:min-w-0">
                     <thead>
                         <tr className="border-b border-slate-100 dark:border-slate-800">
-                            <th className="text-left font-semibold text-slate-500 text-xs uppercase tracking-wide pb-4 pl-2">Receipt No.</th>
-                            <th className="text-left font-semibold text-slate-500 text-xs uppercase tracking-wide pb-4">Student</th>
-                            <th className="text-left font-semibold text-slate-500 text-xs uppercase tracking-wide pb-4">Method & Ref</th>
-                            <th className="text-left font-semibold text-slate-500 text-xs uppercase tracking-wide pb-4">Date</th>
-                            <th className="text-left font-semibold text-slate-500 text-xs uppercase tracking-wide pb-4">Amount</th>
-                            <th className="text-right font-semibold text-slate-500 text-xs uppercase tracking-wide pb-4 pr-2">Actions</th>
+                            <th className="text-left font-bold text-slate-400 text-[10px] uppercase tracking-widest pb-3 pl-2">Receipt No.</th>
+                            <th className="text-left font-bold text-slate-400 text-[10px] uppercase tracking-widest pb-3">Student</th>
+                            <th className="text-left font-bold text-slate-400 text-[10px] uppercase tracking-widest pb-3">Method & Ref</th>
+                            <th className="text-left font-bold text-slate-400 text-[10px] uppercase tracking-widest pb-3">Date</th>
+                            <th className="text-left font-bold text-slate-400 text-[10px] uppercase tracking-widest pb-3">Amount</th>
+                            <th className="text-right font-bold text-slate-400 text-[10px] uppercase tracking-widest pb-3 pr-2">Actions</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50 dark:divide-slate-800">

@@ -109,9 +109,9 @@ export function PaymentForm() {
     }
 
     return (
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-8 shadow-sm border border-slate-100 dark:border-slate-800 h-fit">
-            <h2 className="text-xl font-bold text-slate-800 dark:text-white mb-2">Record Fee Payment</h2>
-            <p className="text-slate-500 text-sm mb-8">Select a student and record a payment for a fee.</p>
+        <div className="bg-white dark:bg-slate-900 rounded-2xl md:rounded-3xl p-4 md:p-8 shadow-sm border border-slate-100 dark:border-slate-800 h-fit">
+            <h2 className="text-lg md:text-xl font-bold text-slate-800 dark:text-white mb-1">Record Fee Payment</h2>
+            <p className="text-slate-500 text-xs md:text-sm mb-6 md:mb-8">Select a student and record a payment for a fee.</p>
 
             <form onSubmit={handleSubmit} className="space-y-6">
                 <div className="space-y-2">

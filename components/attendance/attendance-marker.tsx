@@ -82,7 +82,7 @@ export function AttendanceMarker({ students, existingAttendance, date }: Attenda
 
   return (
     <div className="space-y-4">
-      <div className="grid gap-4 md:grid-cols-4">
+      <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
         {statusButtons.map(({ status, label, icon: Icon, color, bgColor }) => (
           <Card key={status}>
             <CardContent className="pt-6">
@@ -112,22 +112,26 @@ export function AttendanceMarker({ students, existingAttendance, date }: Attenda
             {students.map((student) => (
               <div
                 key={student.id}
-                className="flex items-center justify-between rounded-lg border p-4 hover:bg-muted/50 transition-colors"
+                className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-zinc-100 dark:border-zinc-800 p-4 hover:bg-muted/50 transition-colors shadow-sm"
               >
                 <div className="flex-1">
                   <p className="font-medium">{`${student.first_name} ${student.last_name}`}</p>
                   <p className="text-sm text-muted-foreground">Roll: {student.roll_number}</p>
                 </div>
 
-                <div className="flex items-center gap-2">
-                  {statusButtons.map(({ status, icon: Icon }) => (
+                <div className="flex items-center gap-1.5 sm:gap-2">
+                  {statusButtons.map(({ status, icon: Icon, label }) => (
                     <Button
                       key={status}
                       variant={attendanceData[student.id] === status ? "default" : "outline"}
                       size="icon"
-                      className={cn(attendanceData[student.id] === status && "shadow-md")}
+                      className={cn(
+                        "h-9 w-9 sm:h-10 sm:w-10 rounded-lg transition-all",
+                        attendanceData[student.id] === status && "shadow-md ring-2 ring-primary/20 scale-105"
+                      )}
                       onClick={() => updateStatus(student.id, status)}
                       disabled={isSaving}
+                      title={label}
                     >
                       <Icon className="h-4 w-4" />
                     </Button>
