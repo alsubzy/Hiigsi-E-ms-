@@ -1,0 +1,33 @@
+
+--- Columns for students ---
+id, roll_number, first_name, last_name, date_of_birth, gender, email, phone, address, admission_date, parent_name, parent_phone, parent_email, blood_group, status, created_at, updated_at, section_id
+
+--- Columns for sections ---
+id, class_id, name, capacity, status, created_at, updated_at
+
+--- Columns for accounting_payments ---
+id, payment_no, invoice_id, student_id, amount, payment_date, payment_method, bank_account_id, reference_no, notes, created_by, created_at
+
+--- Columns for invoices ---
+id, invoice_no, student_id, date, due_date, total_amount, paid_amount, balance_amount, status, notes, created_at
+
+--- Columns for invoice_items ---
+id, invoice_id, student_fee_id, amount, description
+
+--- Columns for student_fees ---
+id, student_id, fee_structure_id, amount, discount_amount, net_amount, status, academic_year_id, term_id, created_at, updated_at, discount_reason
+
+--- Columns for fee_structures ---
+id, fee_category_id, academic_year_id, term_id, amount, is_mandatory, due_date, created_at, class_id
+
+--- Columns for academic_years ---
+id, year_name, start_date, end_date, is_active, created_at, updated_at, name, is_current
+
+--- Columns for terms ---
+id, academic_year_id, name, start_date, end_date, status, created_at, updated_at, is_current
+
+--- Columns for fee_categories ---
+id, name, account_id, description, created_at
+
+--- Columns for classes ---
+id, name, level, description, status, created_at, updated_at

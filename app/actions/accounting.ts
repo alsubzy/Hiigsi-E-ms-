@@ -729,7 +729,7 @@ export async function getPaymentDetails(paymentId: string) {
             students (
               first_name, 
               last_name, 
-              student_id, 
+              roll_number, 
               sections (
                 name, 
                 classes (name)

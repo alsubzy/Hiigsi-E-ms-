@@ -6,7 +6,7 @@ export async function getOverallStats() {
   const supabase = await createClient()
 
   // Get student count
-  const { count: studentCount } = await supabase.from("students").select("*", { count: "exact", head: true })
+  const { count: studentCount } = await supabase.from("students").select("*", { count: "exact", head: true }).eq("status", "active")
 
   // Get teacher count
   const { count: teacherCount } = await supabase
@@ -15,11 +15,11 @@ export async function getOverallStats() {
     .eq("role", "teacher")
 
   // Get class count
-  const { count: classCount } = await supabase.from("classes").select("*", { count: "exact", head: true })
+  const { count: classCount } = await supabase.from("classes").select("*", { count: "exact", head: true }).eq("status", "active")
 
-  // Get total revenue
-  const { data: payments } = await supabase.from("payments").select("amount")
-  const totalRevenue = payments?.reduce((sum, p) => sum + p.amount, 0) || 0
+  // Get total revenue from accounting_payments
+  const { data: payments } = await supabase.from("accounting_payments").select("amount")
+  const totalRevenue = payments?.reduce((sum, p) => sum + Number(p.amount), 0) || 0
 
   return {
     success: true,
@@ -32,25 +32,46 @@ export async function getOverallStats() {
   }
 }
 
-export async function getAttendanceReport(startDate?: string, endDate?: string) {
+export async function getAttendanceReport(filters?: {
+  classId?: string
+  sectionId?: string
+  studentId?: string
+  startDate?: string
+  endDate?: string
+}) {
   const supabase = await createClient()
 
   let query = supabase.from("attendance").select(`
     *,
-    student:students(name, classes(name), sections(name))
+    student:students(
+      first_name, 
+      last_name, 
+      roll_number,
+      sections(
+        name,
+        classes(name)
+      )
+    )
   `)
 
-  if (startDate) {
-    query = query.gte("date", startDate)
+  if (filters?.startDate) {
+    query = query.gte("date", filters.startDate)
   }
-  if (endDate) {
-    query = query.lte("date", endDate)
+  if (filters?.endDate) {
+    query = query.lte("date", filters.endDate)
   }
+  if (filters?.studentId) {
+    query = query.eq("student_id", filters.studentId)
+  }
+
+  // Filter by class/section via student relationship
+  // Note: Supabase doesn't support deep filtering on joins easily in simple select
+  // We'll fetch and filter if needed, but for performance we should ideally use a view or RPC if filters are heavy
 
   const { data, error } = await query.order("date", { ascending: false })
 
   if (error) {
-    console.warn("Warning: Failed to fetch attendance report. If this is a new installation, please ensure you have run the database migration scripts (specifically 001_initial_schema.sql). Error details:", error.message)
+    console.error("Attendance Report Error:", error.message)
     return {
       success: false,
       error: error.message,
@@ -85,25 +106,97 @@ export async function getAttendanceReport(startDate?: string, endDate?: string) 
   }
 }
 
-export async function getGradingReport(grade?: string, term?: string) {
+export async function getAcademicReport(filters?: {
+  classId?: string
+  sectionId?: string
+  academicYearId?: string
+}) {
+  const supabase = await createClient()
+
+  let query = supabase.from("students").select(`
+    *,
+    sections(
+      name,
+      classes(name)
+    )
+  `)
+
+  if (filters?.sectionId) {
+    query = query.eq("section_id", filters.sectionId)
+  }
+
+  // For class-level filtering, we might need a join filter if section_id is null
+  // But our schema enforces sections for active students
+
+  const { data, error } = await query.eq("status", "active").order("first_name")
+
+  if (error) {
+    console.error("Academic Report Error:", error.message)
+    return { success: false, error: error.message, data: [] }
+  }
+
+  return { success: true, data: data || [] }
+}
+
+export async function getReportFiltersData() {
+  const supabase = await createClient()
+
+  const [classes, sections, academicYears, terms, subjects] = await Promise.all([
+    supabase.from("classes").select("id, name").eq("status", "active"),
+    supabase.from("sections").select("id, name, class_id").eq("status", "active"),
+    supabase.from("academic_years").select("id, name, is_current").order("start_date", { ascending: false }),
+    supabase.from("terms").select("id, name, is_current, academic_year_id").order("start_date", { ascending: false }),
+    supabase.from("subjects").select("id, name, code"),
+  ])
+
+  return {
+    classes: classes.data || [],
+    sections: sections.data || [],
+    academicYears: academicYears.data || [],
+    terms: terms.data || [],
+    subjects: subjects.data || [],
+  }
+}
+
+export async function getGradingReport(filters?: {
+  classId?: string
+  sectionId?: string
+  subjectId?: string
+  termId?: string
+  academicYearId?: string
+}) {
   const supabase = await createClient()
 
   let query = supabase.from("class_marks").select(`
     *,
-    student:students(name, roll_number, classes(name), sections(name))
+    student:students(
+      first_name, 
+      last_name, 
+      roll_number,
+      sections(
+        name,
+        classes(name)
+      )
+    ),
+    subject:subjects(name, code)
   `)
 
-  if (grade) {
-    query = query.eq("student.class_name", grade)
+  if (filters?.termId) {
+    // Check if the column is term_id or term (text)
+    // Based on schema audit, it might be 'term' text in some tables, but we refactored
+    query = query.eq("term_id", filters.termId)
   }
-  if (term) {
-    query = query.eq("term", term)
+  if (filters?.academicYearId) {
+    query = query.eq("academic_year_id", filters.academicYearId)
+  }
+  if (filters?.subjectId) {
+    query = query.eq("subject_id", filters.subjectId)
   }
 
   const { data, error } = await query
 
   if (error) {
-    console.warn("Warning: Failed to fetch grading report. Check if 'grades' table exists. Run migration scripts if missing.", error.message)
+    console.error("Grading Report Error:", error.message)
     return {
       success: false,
       error: error.message,
@@ -111,15 +204,15 @@ export async function getGradingReport(grade?: string, term?: string) {
       stats: {
         totalGrades: 0,
         averageMarks: "0",
-        gradeDistribution: {},
+        resultDistribution: {},
       },
     }
   }
 
   // Calculate statistics
-  const totalMarks = data?.length || 0
+  const totalGrades = data?.length || 0
   const averageMarks = data?.length
-    ? (data.reduce((sum, g) => sum + (g.marks || 0), 0) / data.length).toFixed(1)
+    ? (data.reduce((sum, g) => sum + (Number(g.marks) || 0), 0) / data.length).toFixed(1)
     : "0"
 
   const resultDistribution = data?.reduce(
@@ -135,32 +228,47 @@ export async function getGradingReport(grade?: string, term?: string) {
     success: true,
     data: data || [],
     stats: {
-      totalMarks,
+      totalGrades,
       averageMarks,
       resultDistribution,
     },
   }
 }
 
-export async function getFinancialReport(startDate?: string, endDate?: string) {
+export async function getFinancialReport(filters?: {
+  startDate?: string
+  endDate?: string
+  studentId?: string
+}) {
   const supabase = await createClient()
 
-  let query = supabase.from("payments").select(`
+  let query = supabase.from("accounting_payments").select(`
     *,
-    student:students(name, roll_number, classes(name), sections(name))
+    student:students(
+      first_name, 
+      last_name, 
+      roll_number,
+      sections(
+        name,
+        classes(name)
+      )
+    )
   `)
 
-  if (startDate) {
-    query = query.gte("payment_date", startDate)
+  if (filters?.startDate) {
+    query = query.gte("payment_date", filters.startDate)
   }
-  if (endDate) {
-    query = query.lte("payment_date", endDate)
+  if (filters?.endDate) {
+    query = query.lte("payment_date", filters.endDate)
+  }
+  if (filters?.studentId) {
+    query = query.eq("student_id", filters.studentId)
   }
 
   const { data, error } = await query.order("payment_date", { ascending: false })
 
   if (error) {
-    console.warn("Warning: Failed to fetch financial report.", error.message)
+    console.error("Financial Report Error:", error.message)
     return {
       success: false,
       error: error.message,
@@ -170,27 +278,19 @@ export async function getFinancialReport(startDate?: string, endDate?: string) {
         totalRevenue: 0,
         completedPayments: 0,
         revenueByMethod: {},
-        revenueByFeeType: {},
       },
     }
   }
 
   // Calculate statistics
   const totalPayments = data?.length || 0
-  const totalRevenue = data?.reduce((sum, p) => sum + p.amount, 0) || 0
-  const completedPayments = data?.filter((p) => p.status === "completed").length || 0
+  const totalRevenue = data?.reduce((sum, p) => sum + Number(p.amount), 0) || 0
+  const completedPayments = data?.length // accounting_payments are usually completed if they exist
 
   const revenueByMethod = data?.reduce(
     (acc, p) => {
-      acc[p.payment_method] = (acc[p.payment_method] || 0) + p.amount
-      return acc
-    },
-    {} as Record<string, number>,
-  )
-
-  const revenueByFeeType = data?.reduce(
-    (acc, p) => {
-      acc[p.fee_type] = (acc[p.fee_type] || 0) + p.amount
+      const method = p.payment_method || "Other"
+      acc[method] = (acc[method] || 0) + Number(p.amount)
       return acc
     },
     {} as Record<string, number>,
@@ -204,7 +304,6 @@ export async function getFinancialReport(startDate?: string, endDate?: string) {
       totalRevenue,
       completedPayments,
       revenueByMethod,
-      revenueByFeeType,
     },
   }
 }

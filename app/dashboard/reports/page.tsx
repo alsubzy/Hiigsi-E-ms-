@@ -8,6 +8,8 @@ import {
   getGradingReport,
   getFinancialReport,
   getTeacherReport,
+  getAcademicReport,
+  getReportFiltersData,
 } from "@/app/actions/reports"
 
 export default async function ReportsPage() {
@@ -28,23 +30,33 @@ export default async function ReportsPage() {
   }
 
   // Fetch all report data
-  const [overallStatsResult, attendanceResult, gradingResult, financialResult, teacherResult] = await Promise.all([
+  const [
+    overallStatsResult,
+    attendanceResult,
+    gradingResult,
+    financialResult,
+    teacherResult,
+    academicResult,
+    filterDataResult
+  ] = await Promise.all([
     getOverallStats(),
     getAttendanceReport(),
     getGradingReport(),
     getFinancialReport(),
     getTeacherReport(),
+    getAcademicReport(),
+    getReportFiltersData(),
   ])
 
   return (
-    <>
-      <ReportsClient
-        overallStats={overallStatsResult.data}
-        attendanceReport={attendanceResult}
-        gradingReport={gradingResult}
-        financialReport={financialResult}
-        teacherReport={teacherResult}
-      />
-    </>
+    <ReportsClient
+      overallStats={overallStatsResult.data}
+      attendanceReport={attendanceResult}
+      gradingReport={gradingResult}
+      financialReport={financialResult}
+      teacherReport={teacherResult}
+      academicReport={academicResult}
+      filterData={filterDataResult}
+    />
   )
 }
