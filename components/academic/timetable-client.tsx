@@ -2,8 +2,13 @@
 
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { Loader2, Plus, Trash, Calendar as CalendarIcon, Clock } from "lucide-react"
+import {
+    Loader2, Plus, Trash, Calendar as CalendarIcon, Clock,
+    User, MapPin, Book, GraduationCap, Filter as FilterIcon,
+    CalendarDays, TimerIcon
+} from "lucide-react"
 import { format } from "date-fns"
+import { motion, AnimatePresence } from "framer-motion"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -26,14 +31,33 @@ interface TimetableClientProps {
 }
 
 const DAYS = [
-    { value: 1, label: "Monday" },
-    { value: 2, label: "Tuesday" },
-    { value: 3, label: "Wednesday" },
-    { value: 4, label: "Thursday" },
-    { value: 5, label: "Friday" },
-    { value: 6, label: "Saturday" },
-    { value: 7, label: "Sunday" },
+    { value: 1, label: "Monday", short: "Mon", color: "from-blue-500/10 to-blue-600/5" },
+    { value: 2, label: "Tuesday", short: "Tue", color: "from-purple-500/10 to-purple-600/5" },
+    { value: 3, label: "Wednesday", short: "Wed", color: "from-green-500/10 to-green-600/5" },
+    { value: 4, label: "Thursday", short: "Thu", color: "from-amber-500/10 to-amber-600/5" },
+    { value: 5, label: "Friday", short: "Fri", color: "from-orange-500/10 to-orange-600/5" },
+    { value: 6, label: "Saturday", short: "Sat", color: "from-pink-500/10 to-pink-600/5" },
+    { value: 7, label: "Sunday", short: "Sun", color: "from-red-500/10 to-red-600/5" },
 ]
+
+// Helper to get subject color
+const getSubjectColor = (subjectName: string) => {
+    const name = subjectName.toLowerCase()
+    if (name.includes("math")) return "border-l-blue-500 bg-blue-500/5"
+    if (name.includes("science") || name.includes("bio") || name.includes("chem")) return "border-l-green-500 bg-green-500/5"
+    if (name.includes("eng") || name.includes("lang")) return "border-l-purple-500 bg-purple-500/5"
+    if (name.includes("hist") || name.includes("geog")) return "border-l-amber-500 bg-amber-500/5"
+    if (name.includes("tech") || name.includes("comp")) return "border-l-cyan-500 bg-cyan-500/5"
+    return "border-l-zinc-500 bg-zinc-500/5"
+}
+
+// Helper to get time-based gradient
+const getTimeGradient = (time: string) => {
+    const hour = parseInt(time.split(':')[0])
+    if (hour < 12) return "from-blue-500/10 to-transparent" // Morning
+    if (hour < 16) return "from-amber-500/10 to-transparent" // Afternoon
+    return "from-purple-500/10 to-transparent" // Evening
+}
 
 export function TimetableClient({ initialClasses, academicYears }: TimetableClientProps) {
     const router = useRouter()
@@ -50,7 +74,7 @@ export function TimetableClient({ initialClasses, academicYears }: TimetableClie
 
     // Available Data for Forms
     const [availableSubjects, setAvailableSubjects] = useState<Subject[]>([])
-    const [availableTeachers, setAvailableTeachers] = useState<{ id: string, name: string }[]>([]) // Filtered by subject allocation
+    const [availableTeachers, setAvailableTeachers] = useState<{ id: string, name: string }[]>([])
 
     // Form State
     const [formDay, setFormDay] = useState("1")
@@ -108,16 +132,11 @@ export function TimetableClient({ initialClasses, academicYears }: TimetableClie
         async function loadTeachers() {
             if (!activeYear || !formSubjectId || !selectedSectionId) return
 
-            // We prefer to force the allocated teacher, but allow override if needed?
-            // The request said: "Assign teachers to subjects". This implies a strict link.
-            // Let's check allocations.
             const allocs = await getSubjectTeachers(activeYear.id, selectedSectionId)
             if (allocs.success) {
                 const relevant = allocs.data.filter(a => a.subject_id === formSubjectId)
                 if (relevant.length > 0) {
-                    // Found allocated teacher
                     setAvailableTeachers(relevant.map(r => ({ id: r.teacher_id, name: r.teacher?.full_name || "Unknown" })))
-                    // Auto-select if one
                     if (relevant.length === 1) setFormTeacherId(relevant[0].teacher_id)
                 } else {
                     setAvailableTeachers([])
@@ -177,161 +196,301 @@ export function TimetableClient({ initialClasses, academicYears }: TimetableClie
     }
 
     return (
-        <div className="space-y-6">
-            <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                    <h2 className="text-3xl font-bold tracking-tight">Timetable</h2>
-                    <p className="text-muted-foreground">Schedule classes for sections.</p>
+        <div className="space-y-8 min-h-screen">
+            {/* Header Section */}
+            <motion.div
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="flex flex-col md:flex-row md:items-center justify-between gap-4"
+            >
+                <div className="flex items-center gap-4">
+                    <div className="p-4 rounded-2xl bg-gradient-to-br from-blue-500/10 to-purple-500/10 border border-blue-500/20">
+                        <CalendarDays size={32} className="text-blue-600 dark:text-blue-400" />
+                    </div>
+                    <div>
+                        <h2 className="text-4xl font-black tracking-tighter bg-gradient-to-r from-zinc-900 via-zinc-600 to-zinc-400 dark:from-white dark:via-zinc-300 dark:to-zinc-500 bg-clip-text text-transparent">
+                            Timetable
+                        </h2>
+                        <p className="text-zinc-500 font-medium">Schedule classes for sections.</p>
+                    </div>
                 </div>
 
-                {/* Only enable Add if section selected */}
-                <Button onClick={() => setIsDialogOpen(true)} disabled={!selectedSectionId || !activeYear}>
+                <Button
+                    onClick={() => setIsDialogOpen(true)}
+                    disabled={!selectedSectionId || !activeYear}
+                    className="h-11 px-6 rounded-xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 hover:scale-[1.02] transition-transform active:scale-95 font-bold shadow-xl shadow-zinc-200 dark:shadow-none disabled:opacity-50 disabled:cursor-not-allowed"
+                >
                     <Plus className="mr-2 h-4 w-4" /> Add Class
                 </Button>
-            </div>
+            </motion.div>
 
             {/* Filters */}
-            <Card>
-                <CardContent className="p-4 flex gap-4 items-end">
-                    <div className="grid gap-2 w-[200px]">
-                        <Label>Class Level</Label>
-                        <Select value={selectedClassId} onValueChange={(val) => { setSelectedClassId(val); setSelectedSectionId(""); }}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select Class" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {initialClasses.map(c => (
-                                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="grid gap-2 w-[200px]">
-                        <Label>Section</Label>
-                        <Select value={selectedSectionId} onValueChange={setSelectedSectionId} disabled={!selectedClassId}>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select Section" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {availableSections.map(s => (
-                                    <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                </CardContent>
-            </Card>
+            <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.1 }}
+            >
+                <Card className="rounded-[2rem] border-zinc-200 dark:border-zinc-800 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl shadow-xl shadow-zinc-200/40 dark:shadow-none overflow-hidden border-2">
+                    <CardContent className="p-8 flex flex-col md:flex-row gap-6 items-end">
+                        <div className="flex items-center gap-3 text-xs font-black text-zinc-400 uppercase tracking-[0.2em]">
+                            <FilterIcon size={16} />
+                            <span>Filters</span>
+                        </div>
+                        <div className="grid gap-4 flex-1 md:grid-cols-2">
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Class Level</Label>
+                                <Select value={selectedClassId} onValueChange={(val) => { setSelectedClassId(val); setSelectedSectionId(""); }}>
+                                    <SelectTrigger className="h-12 rounded-xl border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 font-bold shadow-sm">
+                                        <SelectValue placeholder="Select Class" />
+                                    </SelectTrigger>
+                                    <SelectContent className="rounded-2xl border-zinc-200 dark:border-zinc-800">
+                                        {initialClasses.map(c => (
+                                            <SelectItem key={c.id} value={c.id} className="rounded-xl my-1">{c.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                            <div className="space-y-2">
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Section</Label>
+                                <Select value={selectedSectionId} onValueChange={setSelectedSectionId} disabled={!selectedClassId}>
+                                    <SelectTrigger className="h-12 rounded-xl border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-900 font-bold shadow-sm">
+                                        <SelectValue placeholder="Select Section" />
+                                    </SelectTrigger>
+                                    <SelectContent className="rounded-2xl border-zinc-200 dark:border-zinc-800">
+                                        {availableSections.map(s => (
+                                            <SelectItem key={s.id} value={s.id} className="rounded-xl my-1">{s.name}</SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
+                            </div>
+                        </div>
+                    </CardContent>
+                </Card>
+            </motion.div>
 
             {/* Timetable Grid View */}
             {selectedSectionId ? (
                 loadingTimetable ? (
-                    <div className="flex justify-center p-12"><Loader2 className="h-8 w-8 animate-spin text-muted-foreground" /></div>
+                    <div className="flex justify-center p-12">
+                        <Loader2 className="h-8 w-8 animate-spin text-zinc-400" />
+                    </div>
                 ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-5 lg:grid-cols-7 gap-4">
-                        {DAYS.map(day => {
+                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 xl:grid-cols-7 gap-4">
+                        {DAYS.map((day, dayIndex) => {
                             const dayEntries = timetable.filter(t => t.day_of_week === day.value)
                             return (
-                                <Card key={day.value} className="min-h-[300px] flex flex-col">
-                                    <CardHeader className="p-3 bg-muted/50 border-b">
-                                        <CardTitle className="text-center text-sm font-bold uppercase">{day.label}</CardTitle>
-                                    </CardHeader>
-                                    <CardContent className="p-2 flex-1 space-y-2">
-                                        {dayEntries.length === 0 && <p className="text-xs text-muted-foreground text-center mt-8">No classes</p>}
-                                        {dayEntries.map(entry => (
-                                            <div key={entry.id} className="bg-card border rounded p-2 text-xs shadow-sm group hover:border-primary transition-colors relative">
-                                                <div className="font-bold truncate">{entry.subject?.name}</div>
-                                                <div className="text-muted-foreground flex items-center gap-1 mt-1">
-                                                    <Clock className="h-3 w-3" /> {entry.start_time.slice(0, 5)} - {entry.end_time.slice(0, 5)}
+                                <motion.div
+                                    key={day.value}
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: dayIndex * 0.05 }}
+                                    whileHover={{ scale: 1.02 }}
+                                    className="group"
+                                >
+                                    <Card className="min-h-[400px] flex flex-col rounded-[2rem] border-zinc-200 dark:border-zinc-800 bg-white/60 dark:bg-zinc-900/60 backdrop-blur-xl overflow-hidden transition-all hover:shadow-[0_20px_50px_rgba(0,0,0,0.08)] dark:hover:shadow-none hover:border-zinc-900 dark:hover:border-white">
+                                        <CardHeader className={cn(
+                                            "p-6 border-b border-zinc-100 dark:border-zinc-800 bg-gradient-to-br",
+                                            day.color
+                                        )}>
+                                            <div className="flex items-center justify-between">
+                                                <div>
+                                                    <CardTitle className="text-sm font-black uppercase tracking-widest text-zinc-900 dark:text-white">
+                                                        {day.label}
+                                                    </CardTitle>
+                                                    <p className="text-[10px] font-bold text-zinc-400 mt-1 uppercase tracking-wider">
+                                                        {dayEntries.length} {dayEntries.length === 1 ? 'Class' : 'Classes'}
+                                                    </p>
                                                 </div>
-                                                {entry.teacher && <div className="mt-1 font-medium text-primary/80 truncate">{entry.teacher.full_name.split(' ')[0]}</div>}
-                                                {entry.room_number && <div className="mt-1 text-muted-foreground">Rm: {entry.room_number}</div>}
-
-                                                <button
-                                                    onClick={() => handleDeleteEntry(entry.id)}
-                                                    className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 p-1 hover:bg-destructive/10 hover:text-destructive rounded"
-                                                >
-                                                    <Trash className="h-3 w-3" />
-                                                </button>
+                                                <CalendarIcon size={20} className="text-zinc-300 group-hover:text-zinc-900 dark:group-hover:text-white transition-colors" />
                                             </div>
-                                        ))}
-                                    </CardContent>
-                                </Card>
+                                        </CardHeader>
+                                        <CardContent className="p-4 flex-1 space-y-3">
+                                            <AnimatePresence>
+                                                {dayEntries.length === 0 && (
+                                                    <motion.div
+                                                        initial={{ opacity: 0 }}
+                                                        animate={{ opacity: 1 }}
+                                                        exit={{ opacity: 0 }}
+                                                        className="flex flex-col items-center justify-center py-12 text-center"
+                                                    >
+                                                        <Book size={32} className="text-zinc-200 dark:text-zinc-800 mb-3" />
+                                                        <p className="text-xs text-zinc-400 font-medium">No classes scheduled</p>
+                                                    </motion.div>
+                                                )}
+                                                {dayEntries.map((entry, entryIndex) => (
+                                                    <motion.div
+                                                        key={entry.id}
+                                                        initial={{ opacity: 0, y: 10 }}
+                                                        animate={{ opacity: 1, y: 0 }}
+                                                        exit={{ opacity: 0, y: -10 }}
+                                                        transition={{ delay: entryIndex * 0.05 }}
+                                                        whileHover={{ y: -4, scale: 1.02 }}
+                                                        className={cn(
+                                                            "relative bg-white dark:bg-zinc-900 border-l-4 rounded-xl p-4 shadow-sm group/entry hover:shadow-lg transition-all",
+                                                            getSubjectColor(entry.subject?.name || "")
+                                                        )}
+                                                    >
+                                                        <div className="space-y-2.5">
+                                                            <div className="flex items-start justify-between">
+                                                                <div className="flex items-center gap-2">
+                                                                    <Book size={14} className="text-zinc-400 flex-shrink-0" />
+                                                                    <div className="font-black text-sm tracking-tight text-zinc-900 dark:text-white line-clamp-1">
+                                                                        {entry.subject?.name}
+                                                                    </div>
+                                                                </div>
+                                                                <button
+                                                                    onClick={() => handleDeleteEntry(entry.id)}
+                                                                    className="opacity-0 group-hover/entry:opacity-100 p-1.5 hover:bg-red-50 dark:hover:bg-red-950/20 hover:text-red-500 rounded-lg transition-all"
+                                                                >
+                                                                    <Trash className="h-3.5 w-3.5" />
+                                                                </button>
+                                                            </div>
+
+                                                            <div className="flex items-center gap-2 text-xs font-bold text-zinc-600 dark:text-zinc-400">
+                                                                <Clock className="h-3.5 w-3.5 text-zinc-400" />
+                                                                <span className="font-mono">{entry.start_time.slice(0, 5)} - {entry.end_time.slice(0, 5)}</span>
+                                                            </div>
+
+                                                            {entry.teacher && (
+                                                                <div className="flex items-center gap-2 text-xs font-medium text-zinc-500">
+                                                                    <User className="h-3.5 w-3.5 text-zinc-400" />
+                                                                    <span className="truncate">{entry.teacher.full_name}</span>
+                                                                </div>
+                                                            )}
+
+                                                            {entry.room_number && (
+                                                                <div className="flex items-center gap-2 text-xs font-medium text-zinc-500">
+                                                                    <MapPin className="h-3.5 w-3.5 text-zinc-400" />
+                                                                    <span>Room {entry.room_number}</span>
+                                                                </div>
+                                                            )}
+                                                        </div>
+
+                                                        {/* Decorative gradient */}
+                                                        <div className={cn(
+                                                            "absolute top-0 right-0 w-20 h-20 bg-gradient-to-br rounded-full opacity-0 group-hover/entry:opacity-100 transition-opacity duration-500 blur-2xl pointer-events-none",
+                                                            getTimeGradient(entry.start_time)
+                                                        )} />
+                                                    </motion.div>
+                                                ))}
+                                            </AnimatePresence>
+                                        </CardContent>
+                                    </Card>
+                                </motion.div>
                             )
                         })}
                     </div>
                 )
             ) : (
-                <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-lg">
-                    Select a Class and Section to view the timetable.
-                </div>
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="flex flex-col items-center justify-center py-32 border-2 border-dashed border-zinc-200 dark:border-zinc-800 rounded-[3rem] bg-zinc-50/30 dark:bg-zinc-900/10"
+                >
+                    <CalendarDays size={64} className="text-zinc-200 dark:text-zinc-800 mb-6" />
+                    <p className="font-bold text-zinc-500 text-lg mb-2">No Section Selected</p>
+                    <p className="text-sm text-zinc-400">Select a Class and Section to view the timetable.</p>
+                </motion.div>
             )}
 
             {/* Add Class Dialog */}
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-                <DialogContent className="sm:max-w-[425px]">
-                    <DialogHeader>
-                        <DialogTitle>Schedule Class</DialogTitle>
-                        <DialogDescription>Add a class to the weekly schedule.</DialogDescription>
+                <DialogContent className="max-w-xl rounded-[2.5rem] bg-white dark:bg-zinc-950 p-0 overflow-hidden border-none shadow-[0_30px_100px_rgba(0,0,0,0.2)]">
+                    <DialogHeader className="p-10 pb-4">
+                        <DialogTitle className="text-3xl font-black tracking-tighter">Schedule Class</DialogTitle>
+                        <DialogDescription className="text-zinc-500 font-medium text-base">
+                            Add a class to the weekly schedule.
+                        </DialogDescription>
                     </DialogHeader>
-                    <form onSubmit={handleCreateEntry} className="space-y-4">
+                    <form onSubmit={handleCreateEntry} className="px-10 pb-10 space-y-6">
                         <div className="space-y-2">
-                            <Label>Day</Label>
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Day</Label>
                             <Select value={formDay} onValueChange={setFormDay}>
-                                <SelectTrigger>
+                                <SelectTrigger className="h-14 rounded-2xl border-zinc-200 dark:border-zinc-800 font-bold bg-zinc-50 dark:bg-zinc-900/50">
                                     <SelectValue placeholder="Select Day" />
                                 </SelectTrigger>
-                                <SelectContent>
-                                    {DAYS.map(d => <SelectItem key={d.value} value={d.value.toString()}>{d.label}</SelectItem>)}
+                                <SelectContent className="rounded-[1.5rem] border-zinc-200 dark:border-zinc-800">
+                                    {DAYS.map(d => <SelectItem key={d.value} value={d.value.toString()} className="rounded-xl my-1 font-bold">{d.label}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Subject</Label>
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Subject</Label>
                             <Select value={formSubjectId} onValueChange={setFormSubjectId}>
-                                <SelectTrigger>
+                                <SelectTrigger className="h-14 rounded-2xl border-zinc-200 dark:border-zinc-800 font-bold bg-zinc-50 dark:bg-zinc-900/50">
                                     <SelectValue placeholder="Select Subject" />
                                 </SelectTrigger>
-                                <SelectContent>
-                                    {availableSubjects.map(s => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}
+                                <SelectContent className="rounded-[1.5rem] border-zinc-200 dark:border-zinc-800">
+                                    {availableSubjects.map(s => <SelectItem key={s.id} value={s.id} className="rounded-xl my-1 font-bold">{s.name}</SelectItem>)}
                                 </SelectContent>
                             </Select>
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Teacher</Label>
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Teacher</Label>
                             <Select value={formTeacherId} onValueChange={setFormTeacherId}>
-                                <SelectTrigger>
+                                <SelectTrigger className="h-14 rounded-2xl border-zinc-200 dark:border-zinc-800 font-bold bg-zinc-50 dark:bg-zinc-900/50">
                                     <SelectValue placeholder={availableTeachers.length ? "Select Teacher" : "No teachers allocated"} />
                                 </SelectTrigger>
-                                <SelectContent>
-                                    {availableTeachers.map(t => <SelectItem key={t.id} value={t.id}>{t.name}</SelectItem>)}
+                                <SelectContent className="rounded-[1.5rem] border-zinc-200 dark:border-zinc-800">
+                                    {availableTeachers.map(t => <SelectItem key={t.id} value={t.id} className="rounded-xl my-1 font-bold">{t.name}</SelectItem>)}
                                 </SelectContent>
                             </Select>
-                            {!formTeacherId && formSubjectId && <p className="text-xs text-yellow-600">Tip: Allocate a teacher to this subject/section first.</p>}
+                            {!formTeacherId && formSubjectId && <p className="text-xs text-amber-600 dark:text-amber-500 ml-1 font-medium">Tip: Allocate a teacher to this subject/section first.</p>}
                         </div>
 
-                        <div className="grid grid-cols-2 gap-4">
+                        <div className="grid grid-cols-2 gap-6">
                             <div className="space-y-2">
-                                <Label>Start Time</Label>
-                                <Input type="time" value={formStartTime} onChange={e => setFormStartTime(e.target.value)} required />
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Start Time</Label>
+                                <Input
+                                    type="time"
+                                    value={formStartTime}
+                                    onChange={e => setFormStartTime(e.target.value)}
+                                    required
+                                    className="h-14 rounded-2xl border-zinc-200 dark:border-zinc-800 font-bold bg-zinc-50 dark:bg-zinc-900/50 text-base"
+                                />
                             </div>
                             <div className="space-y-2">
-                                <Label>End Time</Label>
-                                <Input type="time" value={formEndTime} onChange={e => setFormEndTime(e.target.value)} required />
+                                <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">End Time</Label>
+                                <Input
+                                    type="time"
+                                    value={formEndTime}
+                                    onChange={e => setFormEndTime(e.target.value)}
+                                    required
+                                    className="h-14 rounded-2xl border-zinc-200 dark:border-zinc-800 font-bold bg-zinc-50 dark:bg-zinc-900/50 text-base"
+                                />
                             </div>
                         </div>
 
                         <div className="space-y-2">
-                            <Label>Room (Optional)</Label>
-                            <Input placeholder="e.g. 101" value={formRoom} onChange={e => setFormRoom(e.target.value)} />
+                            <Label className="text-[10px] font-black uppercase tracking-widest text-zinc-400 ml-1">Room (Optional)</Label>
+                            <Input
+                                placeholder="e.g. 101"
+                                value={formRoom}
+                                onChange={e => setFormRoom(e.target.value)}
+                                className="h-14 rounded-2xl border-zinc-200 dark:border-zinc-800 font-bold bg-zinc-50 dark:bg-zinc-900/50 text-base"
+                            />
                         </div>
 
-                        <DialogFooter>
-                            <Button type="submit" disabled={isSubmitting || !formTeacherId}>
-                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />} Schedule
+                        <div className="flex justify-end gap-3 pt-4">
+                            <Button
+                                type="button"
+                                variant="ghost"
+                                onClick={() => setIsDialogOpen(false)}
+                                className="h-14 px-8 rounded-2xl font-black uppercase tracking-widest text-[10px] hover:bg-zinc-100 dark:hover:bg-zinc-800"
+                            >
+                                Cancel
                             </Button>
-                        </DialogFooter>
+                            <Button
+                                type="submit"
+                                disabled={isSubmitting || !formTeacherId}
+                                className="h-14 px-10 rounded-2xl bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 font-black uppercase tracking-[0.2em] text-xs hover:scale-105 transition-transform shadow-[0_15px_30px_rgba(0,0,0,0.1)] active:scale-95 disabled:opacity-50"
+                            >
+                                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CalendarIcon className="mr-2 h-5 w-5" />}
+                                Schedule
+                            </Button>
+                        </div>
                     </form>
                 </DialogContent>
             </Dialog>
