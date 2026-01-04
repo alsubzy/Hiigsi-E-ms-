@@ -38,7 +38,7 @@ export async function getSubjects(classId?: string) {
 
     let query = supabase
         .from("subjects")
-        .select("*, class:classes(name, level)")
+        .select("*")
         .order("name", { ascending: true })
 
     if (classId) {
